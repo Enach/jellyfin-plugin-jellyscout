@@ -9,6 +9,14 @@
     "category": "Streaming",
     "versions": [
       {
+        "version": "0.1.0",
+        "changelog": "MAJOR REWRITE: Complete plugin architecture fix using proper Jellyfin standards. Removed incorrect custom controllers, implemented proper IPluginConfigurationPage interface, fixed embedded resources. Plugin icons and configuration pages now work correctly.",
+        "targetAbi": "10.9.0.0",
+        "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.1.0/JellyScout-v0.1.0.zip",
+        "checksum": "62335a357d35262cb6909ce6f3d98119",
+        "timestamp": "2024-12-20T01:00:00Z"
+      },
+      {
         "version": "0.0.9",
         "changelog": "CRITICAL FIX: Fixed plugin image serving endpoint to resolve 404 errors on plugin icons. Fixed embedded resource path resolution. Both plugin icons and configuration pages should now work properly.",
         "targetAbi": "10.9.0.0",

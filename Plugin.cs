@@ -16,6 +16,11 @@ namespace Jellyfin.Plugin.JellyScout;
 public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
 {
     /// <summary>
+    /// Gets the plugin instance.
+    /// </summary>
+    public static Plugin? Instance { get; private set; }
+    
+    /// <summary>
     /// Initializes a new instance of the <see cref="Plugin"/> class.
     /// </summary>
     /// <param name="applicationPaths">The application paths.</param>
@@ -25,11 +30,6 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         Instance = this;
     }
-
-    /// <summary>
-    /// Gets the current plugin instance.
-    /// </summary>
-    public static Plugin? Instance { get; private set; }
 
     /// <summary>
     /// Gets the plugin name.
@@ -57,23 +57,17 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
             new PluginPageInfo
             {
                 Name = "JellyScout",
-                EmbeddedResourcePath = string.Format(
-                    "{0}.Web.ConfigurationPage.html",
-                    GetType().Namespace),
+                EmbeddedResourcePath = GetType().Namespace + ".Web.ConfigurationPage.html",
                 EnableInMainMenu = false
             },
             new PluginPageInfo
             {
-                Name = "JellyScoutCatalog",
-                EmbeddedResourcePath = string.Format(
-                    "{0}.Web.CatalogPage.html",
-                    GetType().Namespace),
+                Name = "JellyScout Catalog",
+                EmbeddedResourcePath = GetType().Namespace + ".Web.CatalogPage.html",
                 EnableInMainMenu = true,
                 MenuSection = "server",
                 MenuIcon = "search"
             }
         };
     }
-
-
 }
