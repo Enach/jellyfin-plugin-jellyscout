@@ -1,245 +1,107 @@
-# 🎬 JellyScout - Jellyfin Plugin
+# JellyScout - Jellyfin Plugin
 
-**Discover, stream, and download movies and TV shows directly from your Jellyfin server**
+A simple plugin that helps you discover and manage movies and TV shows in your Jellyfin server.
 
-JellyScout is a powerful Jellyfin plugin that integrates with The Movie Database (TMDB) to provide seamless content discovery, streaming, and downloading capabilities. Search for movies and TV shows, check if they exist in your library, and stream or download them instantly.
+JellyScout connects to The Movie Database (TMDB) to let you search for content, see what's already in your library, and optionally stream or download new content through integrations with services like Sonarr and Radarr.
 
-## ✨ Features
+## What it does
 
-### 🔍 **Smart Content Discovery**
-- Search movies and TV shows using TMDB's comprehensive database
-- Rich metadata including ratings, descriptions, release dates, and genres
-- Automatic library checking to avoid duplicates
-- Beautiful, responsive web interface
+- **Search**: Look up movies and TV shows using TMDB's database
+- **Library check**: See if content is already in your Jellyfin library
+- **Streaming**: Stream content directly (if you have Streamio set up)
+- **Downloads**: Add content to Sonarr/Radarr for downloading
+- **Notifications**: Get updates on what's happening
 
-### 🎥 **Streaming & Downloads**
-- Direct streaming from torrent sources via Streamio API
-- Integrated download management with Sonarr/Radarr
-- Support for multiple torrent providers
-- Quality preferences (4K, 1080p, 720p, 480p)
+## Getting started
 
-### 🔔 **Real-time Notifications**
-- SignalR-powered live updates
-- Download progress tracking
-- Streaming status notifications
-- Error handling and alerts
-
-### 📋 **Advanced Features**
-- Playlist management and organization
-- Advanced filtering and sorting
-- Configuration validation with recommendations
-- Comprehensive health monitoring
-- Caching for improved performance
-
-### ⚙️ **Professional Configuration**
-- Easy-to-use configuration interface
-- Multiple API integrations (TMDB, Streamio, Sonarr, Radarr)
-- Feature toggles for streaming/downloads
-- Quality and search result limits
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Jellyfin Server 10.9.0 or higher
-- .NET 8.0 runtime
-- TMDB API key (free)
+### What you need
+- Jellyfin Server 10.9.0 or newer
+- A free TMDB API key
+- Optionally: Sonarr, Radarr, or Streamio if you want those features
 
 ### Installation
 
-1. **Download the Plugin:**
-   ```bash
-   wget https://github.com/enach/jellyfin-plugin-jellyscout/releases/latest/download/JellyScout-v0.0.2.zip
-   ```
+The easiest way is through Jellyfin's plugin catalog:
 
-2. **Extract and Install:**
-   ```bash
-   unzip JellyScout-v0.0.2.zip
-   cp *.dll /path/to/jellyfin/plugins/JellyScout/
-   cp manifest.json /path/to/jellyfin/plugins/JellyScout/
-   ```
+1. Go to Jellyfin Admin → Plugins → Catalog
+2. Find "JellyScout" and install it
+3. Restart Jellyfin
+4. Configure the plugin with your TMDB API key
 
-3. **Restart Jellyfin:**
-   ```bash
-   sudo systemctl restart jellyfin
-   ```
+You can also install manually by downloading the latest release and copying the files to your Jellyfin plugins folder.
 
-4. **Configure the Plugin:**
-   - Open Jellyfin Admin → Plugins → JellyScout
-   - Add your TMDB API key
-   - Configure external services (optional)
+## Setting it up
 
-📖 **[Full Installation Guide](INSTALLATION.md)**
+### Getting a TMDB API key
 
-## 🔧 Configuration
+1. Go to [TMDB](https://www.themoviedb.org) and create a free account
+2. Go to Settings → API and request an API key
+3. Choose "Developer" when asked about usage
+4. Copy your API key
 
-### Getting a TMDB API Key
+### Basic configuration
 
-1. Visit [TMDB API Settings](https://www.themoviedb.org/settings/api)
-2. Create a free account if you don't have one
-3. Request an API key (choose "Developer" option)
-4. Copy your API key for use in the plugin
+In Jellyfin Admin → Plugins → JellyScout:
 
-### Plugin Settings
+- **TMDB API Key**: Paste your API key here (required)
+- **Enable Streaming**: Turn on if you want to stream content
+- **Enable Downloads**: Turn on if you want to download content
+- **Enable Notifications**: Turn on if you want status updates
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| **TMDB API Key** | Your API key from TMDB | *Required* |
-| **Enable Streaming** | Allow direct streaming from torrents | `true` |
-| **Enable Downloads** | Allow torrent downloads | `true` |
-| **Enable Notifications** | Real-time notifications | `true` |
-| **Auto-check Library** | Check if content exists in library | `true` |
-| **Default Quality** | Preferred video quality | `1080p` |
-| **Max Search Results** | Maximum results per search | `50` |
-| **API Timeout** | Timeout for external API calls | `30s` |
+### Optional integrations
 
-### External Service Integration
+If you use these services, you can connect them:
 
-**Streamio (Streaming):**
-- Server URL: `http://your-streamio-server:port`
+**Sonarr (for TV shows):**
+- URL: `http://your-sonarr-server:8989`
+- API Key: Found in Sonarr's settings
+
+**Radarr (for movies):**
+- URL: `http://your-radarr-server:7878`
+- API Key: Found in Radarr's settings
+
+**Streamio (for streaming):**
+- URL: `http://your-streamio-server:port`
 - API Key: Your Streamio API key
 
-**Sonarr (TV Shows):**
-- Server URL: `http://your-sonarr-server:8989`
-- API Key: Your Sonarr API key
+## How to use it
 
-**Radarr (Movies):**
-- Server URL: `http://your-radarr-server:7878`
-- API Key: Your Radarr API key
+1. Open the JellyScout page in Jellyfin
+2. Search for a movie or TV show
+3. Browse the results - items already in your library will be marked
+4. Click on items to see more details, stream, or download
 
-## 📖 Usage
+## Development
 
-### Basic Search
-
-1. Navigate to the JellyScout page in Jellyfin
-2. Enter a movie or TV show name in the search box
-3. Browse the results with rich metadata
-4. Items already in your library will be marked
-
-### Content Actions
-
-- **🔍 Details**: View comprehensive information including cast, crew, and ratings
-- **▶️ Stream**: Start streaming directly from torrent sources
-- **⬇️ Download**: Download content via Sonarr/Radarr integration
-- **📚 Library**: Check if content exists in your Jellyfin library
-
-### Advanced Features
-
-- **🎵 Playlists**: Create and manage content playlists
-- **🔍 Filters**: Advanced filtering by genre, year, rating, and more
-- **📊 Analytics**: View usage statistics and performance metrics
-- **🔔 Notifications**: Real-time updates on streaming and download status
-
-## 🛠️ Development
-
-### Building from Source
+Want to build it yourself or contribute?
 
 ```bash
-# Clone the repository
 git clone https://github.com/enach/jellyfin-plugin-jellyscout.git
 cd jellyfin-plugin-jellyscout
-
-# Restore dependencies
 dotnet restore
-
-# Build the plugin
 dotnet build --configuration Release
-
-# The built files will be in bin/Release/net8.0/
 ```
 
-### Project Structure
+The built files will be in `bin/Release/net8.0/`.
 
-```
-Jellyfin.Plugin.JellyScout/
-├── Configuration/
-│   └── PluginConfiguration.cs         # Plugin settings
-├── Services/
-│   ├── TMDBService.cs                 # TMDB API integration
-│   ├── StreamingService.cs            # Streaming via Streamio
-│   ├── SonarrService.cs               # TV show downloads
-│   ├── RadarrService.cs               # Movie downloads
-│   ├── FilteringService.cs            # Advanced filtering
-│   ├── PlaylistService.cs             # Playlist management
-│   ├── ConfigurationValidationService.cs # Config validation
-│   ├── CacheService.cs                # Performance caching
-│   ├── HealthCheckService.cs          # Health monitoring
-│   └── RetryService.cs                # Resilience patterns
-├── Web/
-│   ├── CatalogPage.html               # Main interface
-│   ├── CatalogPage.js                 # Frontend logic
-│   └── ConfigurationPage.html         # Settings page
-├── JellyScoutController.cs            # REST API endpoints
-├── NotificationHub.cs                 # SignalR hub
-├── ServiceManager.cs                  # Service management
-├── Plugin.cs                          # Main plugin class
-└── manifest.json                      # Plugin manifest
-```
+## Issues and help
 
-### API Endpoints
+If something isn't working or you have questions:
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/jellyscout/search` | Search movies and TV shows |
-| `GET` | `/jellyscout/details/{tmdbId}` | Get detailed information |
-| `GET` | `/jellyscout/torrents` | Search for torrents |
-| `POST` | `/jellyscout/stream` | Start streaming |
-| `POST` | `/jellyscout/download` | Start download |
-| `GET` | `/jellyscout/status` | Get plugin status |
-| `GET` | `/jellyscout/health` | Health check endpoints |
-| `GET` | `/jellyscout/playlists` | Playlist management |
-| `GET` | `/jellyscout/filters` | Advanced filtering |
+- Check the [GitHub Issues](https://github.com/enach/jellyfin-plugin-jellyscout/issues) to see if it's a known problem
+- Open a new issue if you found a bug
+- Use [GitHub Discussions](https://github.com/enach/jellyfin-plugin-jellyscout/discussions) for questions
 
-## 🔒 Security & Privacy
+## License
 
-- **🔐 API Keys**: Stored securely in plugin configuration
-- **🚫 No Data Collection**: No personal data is collected or transmitted
-- **🏠 Local Processing**: All operations happen on your server
-- **🔒 HTTPS**: All external API calls use secure connections
-- **🛡️ Input Validation**: Comprehensive protection against malicious input
+MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📈 Performance
+## Thanks
 
-- **⚡ Caching**: Smart caching reduces API calls and improves response times
-- **🔄 Retry Logic**: Automatic retry with exponential backoff for failed requests
-- **🚥 Circuit Breaker**: Prevents cascading failures from external services
-- **📊 Health Monitoring**: Real-time monitoring of all integrated services
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### How to Contribute
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 🐛 Issues & Support
-
-- **🐛 Bug Reports**: [GitHub Issues](https://github.com/enach/jellyfin-plugin-jellyscout/issues)
-- **💬 Discussions**: [GitHub Discussions](https://github.com/enach/jellyfin-plugin-jellyscout/discussions)
-- **📚 Documentation**: [Wiki](https://github.com/enach/jellyfin-plugin-jellyscout/wiki)
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Jellyfin](https://jellyfin.org/) - The awesome media server
-- [TMDB](https://www.themoviedb.org/) - The Movie Database API
-- [Sonarr](https://sonarr.tv/) - TV series management
-- [Radarr](https://radarr.video/) - Movie collection management
-
-## 📊 Statistics
-
-- **Rating**: A- (9.2/10) - Production-ready with enterprise features
-- **Build Status**: ✅ No warnings or errors
-- **Test Coverage**: 🔄 Unit tests in development
-- **Performance**: ⚡ Optimized with caching and retry logic
+- [Jellyfin](https://jellyfin.org/) for the great media server
+- [TMDB](https://www.themoviedb.org/) for the movie database
+- [Sonarr](https://sonarr.tv/) and [Radarr](https://radarr.video/) for the download management
 
 ---
 
-**🎉 Ready for GitHub at https://github.com/enach/jellyfin-plugin-jellyscout** 
+This is a hobby project, so please be patient with updates and fixes. Pull requests are welcome! 

@@ -1,24 +1,29 @@
-{
-  "id": "JellyScout",
-  "name": "JellyScout",
-  "version": "0.0.2",
-  "description": "Advanced movie & TV discovery plugin with streaming and download capabilities. Search TMDB, check library status, and stream or download content seamlessly with real-time notifications.",
-  "targetAbi": "10.9.0.0",
-  "framework": "net8.0",
-  "owner": "JellyScout Team",
-  "repository": "https://github.com/enach/jellyfin-plugin-jellyscout",
-  "imageUrl": "https://raw.githubusercontent.com/enach/jellyfin-plugin-jellyscout/main/icon.png",
-  "categories": [ "Catalog", "Streaming", "Downloads", "Media Discovery" ],
-  "changelog": "Major rewrite with modern UI, enhanced features, and improved reliability. Added comprehensive API integration with Streamio, Sonarr, and Radarr. Implemented advanced filtering, playlist support, and configuration validation.",
-  "overview": "🎬 Discover, stream, and download movies and TV shows directly from your Jellyfin server with JellyScout - featuring TMDB integration, real-time notifications, and a beautiful modern interface.",
-  "version_history": [
-    {
-      "version": "0.0.2",
-      "changes": "Complete rewrite with modern architecture, API integration, and enhanced features"
-    },
-    {
-      "version": "0.0.1", 
-      "changes": "Initial development version with basic TMDB integration and streaming capabilities"
-    }
-  ]
-}
+[
+  {
+    "guid": "a8b4d8c6-3f2a-4d7e-9b1c-5e8f2a9d3c7b",
+    "name": "JellyScout",
+    "description": "Advanced movie & TV discovery plugin with streaming and download capabilities. Search TMDB, check library status, and stream or download content seamlessly with real-time notifications.",
+    "overview": "🎬 Discover, stream, and download movies and TV shows directly from your Jellyfin server with JellyScout - featuring TMDB integration, real-time notifications, and a beautiful modern interface.",
+    "owner": "Nicolas Hochart",
+    "imageUrl": "https://raw.githubusercontent.com/enach/jellyfin-plugin-jellyscout/main/icon.png",
+    "category": "Streaming",
+    "versions": [
+      {
+        "version": "0.0.2",
+        "changelog": "Complete rewrite with modern architecture, API integration, and enhanced features. Added comprehensive API integration with Streamio, Sonarr, and Radarr. Implemented advanced filtering, playlist support, and configuration validation.",
+        "targetAbi": "10.9.0.0",
+        "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.0.2/JellyScout-v0.0.2.zip",
+        "checksum": "9cccd5cf70ae98edc2f5e4b8281b55ba99fc6ccb38e7eb6bf630680a533cbf21",
+        "timestamp": "2024-12-19T12:00:00Z"
+      },
+      {
+        "version": "0.0.1",
+        "changelog": "Initial development version with basic TMDB integration and streaming capabilities",
+        "targetAbi": "10.9.0.0",
+        "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.0.1/Jellyfin.Plugin.JellyScout.zip",
+        "checksum": "placeholder_checksum_for_v0.0.1",
+        "timestamp": "2024-12-01T12:00:00Z"
+      }
+    ]
+  }
+]
