@@ -4,721 +4,173 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JellyScout Configuration</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: #fff;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .config-section {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 30px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .config-section h2 {
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-            color: #fff;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-            padding-bottom: 10px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #fff;
-        }
-
-        .form-group input[type="text"],
-        .form-group input[type="number"],
-        .form-group select {
-            width: 100%;
-            padding: 12px 16px;
-            border: none;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            background: #fff;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            margin-right: 10px;
-            cursor: pointer;
-        }
-
-        .checkbox-group label {
-            margin-bottom: 0;
-            cursor: pointer;
-            font-weight: normal;
-        }
-
-        .help-text {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.8);
-            margin-top: 5px;
-            line-height: 1.4;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 30px;
-        }
-
-        .btn {
-            padding: 12px 30px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            min-width: 120px;
-        }
-
-        .btn-primary {
-            background: #4CAF50;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #45a049;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #5a6268;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        .btn-test {
-            background: #17a2b8;
-            color: white;
-        }
-
-        .btn-test:hover {
-            background: #138496;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 8px;
-            color: white;
-            font-weight: 600;
-            z-index: 1000;
-            max-width: 400px;
-            opacity: 0;
-            transform: translateX(100%);
-            transition: all 0.3s ease;
-        }
-
-        .notification.show {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        .notification.success {
-            background: #28a745;
-        }
-
-        .notification.error {
-            background: #dc3545;
-        }
-
-        .notification.info {
-            background: #17a2b8;
-        }
-
-        .api-key-section {
-            background: rgba(255, 193, 7, 0.1);
-            border: 1px solid rgba(255, 193, 7, 0.3);
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .api-key-section h3 {
-            color: #ffc107;
-            margin-bottom: 10px;
-        }
-
-        .api-key-section p {
-            margin-bottom: 15px;
-            line-height: 1.5;
-        }
-
-        .api-key-section a {
-            color: #ffc107;
-            text-decoration: underline;
-        }
-
-        .status-indicator {
-            display: inline-flex;
-            align-items: center;
-            font-size: 0.9rem;
-            margin-left: 10px;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 5px;
-        }
-
-        .status-dot.active {
-            background: #28a745;
-        }
-
-        .status-dot.inactive {
-            background: #dc3545;
-        }
-
-        @media (max-width: 768px) {
-            .button-group {
-                flex-direction: column;
-            }
-            
-            .btn {
-                width: 100%;
-            }
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-                    <h1>⚙️ JellyScout Configuration</h1>
-        <p>Configure your JellyScout plugin settings</p>
-        </div>
-
-        <div class="config-section">
-            <h2>API Configuration</h2>
-            
-            <div class="api-key-section">
-                <h3>📋 TMDB API Key Required</h3>
-                <p>To use JellyScout, you need a free API key from The Movie Database (TMDB):</p>
-                <ol>
-                    <li>Visit <a href="https://www.themoviedb.org/settings/api" target="_blank">TMDB API Settings</a></li>
-                    <li>Create a free account if you don't have one</li>
-                    <li>Request an API key (choose "Developer" option)</li>
-                    <li>Copy your API key and paste it below</li>
-                </ol>
+    <div data-role="page" class="page type-interior configurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <form class="jellyscoutConfigForm">
+                    <div class="sectionTitleContainer flex align-items-center">
+                        <h2 class="sectionTitle">JellyScout Configuration</h2>
+                    </div>
+                    
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input type="checkbox" is="emby-checkbox" id="EnableStreaming" />
+                            <span>Enable Streaming</span>
+                        </label>
+                        <div class="fieldDescription">Allow users to stream content directly from torrents</div>
+                    </div>
+                    
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input type="checkbox" is="emby-checkbox" id="EnableDownloads" />
+                            <span>Enable Downloads</span>
+                        </label>
+                        <div class="fieldDescription">Allow users to download content via external services</div>
+                    </div>
+                    
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="TmdbApiKey">TMDB API Key</label>
+                        <input is="emby-input" type="text" id="TmdbApiKey" name="TmdbApiKey" />
+                        <div class="fieldDescription">Get your free API key from <a href="https://www.themoviedb.org/settings/api" target="_blank">TMDB</a></div>
+                    </div>
+                    
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="MaxSearchResults">Max Search Results</label>
+                        <input is="emby-input" type="number" id="MaxSearchResults" name="MaxSearchResults" min="10" max="100" />
+                        <div class="fieldDescription">Maximum number of search results to return (10-100)</div>
+                    </div>
+                    
+                    <div class="selectContainer">
+                        <label class="selectLabel" for="DefaultQuality">Default Quality</label>
+                        <select is="emby-select" id="DefaultQuality" name="DefaultQuality">
+                            <option value="480p">480p</option>
+                            <option value="720p">720p</option>
+                            <option value="1080p">1080p</option>
+                            <option value="4K">4K</option>
+                        </select>
+                        <div class="fieldDescription">Default quality preference for streaming and downloads</div>
+                    </div>
+                    
+                    <h3 class="sectionTitle">External Services</h3>
+                    
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="SonarrServerUrl">Sonarr Server URL</label>
+                        <input is="emby-input" type="text" id="SonarrServerUrl" name="SonarrServerUrl" placeholder="http://localhost:8989" />
+                        <div class="fieldDescription">URL of your Sonarr instance (optional)</div>
+                    </div>
+                    
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="SonarrApiKey">Sonarr API Key</label>
+                        <input is="emby-input" type="text" id="SonarrApiKey" name="SonarrApiKey" />
+                        <div class="fieldDescription">Found in Sonarr Settings > General > Security (optional)</div>
+                    </div>
+                    
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="RadarrServerUrl">Radarr Server URL</label>
+                        <input is="emby-input" type="text" id="RadarrServerUrl" name="RadarrServerUrl" placeholder="http://localhost:7878" />
+                        <div class="fieldDescription">URL of your Radarr instance (optional)</div>
+                    </div>
+                    
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="RadarrApiKey">Radarr API Key</label>
+                        <input is="emby-input" type="text" id="RadarrApiKey" name="RadarrApiKey" />
+                        <div class="fieldDescription">Found in Radarr Settings > General > Security (optional)</div>
+                    </div>
+                    
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input type="checkbox" is="emby-checkbox" id="EnableNotifications" />
+                            <span>Enable Notifications</span>
+                        </label>
+                        <div class="fieldDescription">Show real-time notifications for downloads and streaming</div>
+                    </div>
+                    
+                    <br />
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
             </div>
-
-            <div class="form-group">
-                <label for="tmdbApiKey">
-                    TMDB API Key
-                    <span class="status-indicator" id="apiKeyStatus">
-                        <span class="status-dot inactive"></span>
-                        <span>Not configured</span>
-                    </span>
-                </label>
-                <input type="text" id="tmdbApiKey" placeholder="Enter your TMDB API key..." />
-                <div class="help-text">
-                    Your API key is stored securely and only used to search for movies and TV shows.
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="apiTimeout">API Timeout (seconds)</label>
-                <input type="number" id="apiTimeout" min="10" max="120" value="30" />
-                <div class="help-text">
-                    How long to wait for API responses before timing out.
-                </div>
-            </div>
-        </div>
-
-        <div class="config-section">
-            <h2>Feature Settings</h2>
-            
-            <div class="checkbox-group">
-                <input type="checkbox" id="enableStreaming" checked />
-                <label for="enableStreaming">Enable Streaming</label>
-            </div>
-            <div class="help-text">Allow users to stream content directly from torrents.</div>
-
-            <div class="checkbox-group">
-                <input type="checkbox" id="enableDownloads" checked />
-                <label for="enableDownloads">Enable Downloads</label>
-            </div>
-            <div class="help-text">Allow users to download content via torrent clients.</div>
-
-            <div class="checkbox-group">
-                <input type="checkbox" id="enableNotifications" checked />
-                <label for="enableNotifications">Enable Notifications</label>
-            </div>
-            <div class="help-text">Show real-time notifications for downloads and streaming.</div>
-
-            <div class="checkbox-group">
-                <input type="checkbox" id="autoCheckLibrary" checked />
-                <label for="autoCheckLibrary">Auto-check Library</label>
-            </div>
-            <div class="help-text">Automatically check if content already exists in your Jellyfin library.</div>
-        </div>
-
-        <div class="config-section">
-            <h2>Quality & Limits</h2>
-            
-            <div class="form-group">
-                <label for="defaultQuality">Default Quality Preference</label>
-                <select id="defaultQuality">
-                    <option value="4k">4K / 2160p</option>
-                    <option value="1080p" selected>1080p</option>
-                    <option value="720p">720p</option>
-                    <option value="480p">480p</option>
-                </select>
-                <div class="help-text">
-                    Preferred quality for streaming and downloads.
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="maxSearchResults">Maximum Search Results</label>
-                <input type="number" id="maxSearchResults" min="10" max="100" value="50" />
-                <div class="help-text">
-                    Maximum number of results to show per search.
-                </div>
-            </div>
-        </div>
-
-        <div class="config-section">
-            <h2>🎬 Torrent Streaming Integration</h2>
-            
-            <div class="checkbox-group">
-                <input type="checkbox" id="streamioEnabled" />
-                <label for="streamioEnabled">Enable Instant Streaming</label>
-            </div>
-            <div class="help-text">Allow users to stream torrents instantly while they download. Requires a torrent client or WebTorrent service.</div>
-
-            <div class="form-group">
-                <label for="torrentClientType">Torrent Client</label>
-                <select id="torrentClientType">
-                    <option value="qbittorrent" selected>qBittorrent</option>
-                    <option value="transmission">Transmission</option>
-                    <option value="webtorrent">WebTorrent Server</option>
-                </select>
-                <div class="help-text">
-                    The torrent client you want to use for streaming.
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="torrentClientUrl">Torrent Client Web UI URL</label>
-                <input type="text" id="torrentClientUrl" value="http://localhost:8080" placeholder="http://localhost:8080" />
-                <div class="help-text">
-                    URL of your torrent client's web interface (qBittorrent: 8080, Transmission: 9091).
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="torrentClientUsername">Username</label>
-                <input type="text" id="torrentClientUsername" value="admin" placeholder="admin" />
-                <div class="help-text">
-                    Username for torrent client authentication.
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="torrentClientPassword">Password</label>
-                <input type="password" id="torrentClientPassword" placeholder="Enter password..." />
-                <div class="help-text">
-                    Password for torrent client authentication.
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="streamioUrl">WebTorrent Server URL (Optional)</label>
-                <input type="text" id="streamioUrl" value="http://localhost:3000" placeholder="http://localhost:3000" />
-                <div class="help-text">
-                    URL of external WebTorrent streaming service (if using one).
-                </div>
-            </div>
-
-            <div class="checkbox-group">
-                <input type="checkbox" id="streamioHttps" />
-                <label for="streamioHttps">Use HTTPS</label>
-            </div>
-            <div class="help-text">Enable if your services use SSL/TLS.</div>
-        </div>
-
-        <div class="config-section">
-            <h2>📺 Sonarr Integration</h2>
-            
-            <div class="checkbox-group">
-                <input type="checkbox" id="sonarrEnabled" checked />
-                <label for="sonarrEnabled">Enable Sonarr</label>
-            </div>
-            <div class="help-text">Use Sonarr for TV show torrent searching.</div>
-
-            <div class="form-group">
-                <label for="sonarrUrl">Sonarr Server URL</label>
-                <input type="text" id="sonarrUrl" value="http://localhost:8989" placeholder="http://localhost:8989" />
-                <div class="help-text">
-                    URL of your Sonarr instance.
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="sonarrApiKey">Sonarr API Key</label>
-                <input type="text" id="sonarrApiKey" placeholder="Enter your Sonarr API key..." />
-                <div class="help-text">
-                    Found in Sonarr Settings > General > Security > API Key.
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="sonarrQualityProfile">Quality Profile ID</label>
-                <input type="number" id="sonarrQualityProfile" value="1" min="1" />
-                <div class="help-text">
-                    Quality profile to use when adding shows (found in Sonarr Settings > Profiles).
-                </div>
-            </div>
-        </div>
-
-        <div class="config-section">
-            <h2>🎭 Radarr Integration</h2>
-            
-            <div class="checkbox-group">
-                <input type="checkbox" id="radarrEnabled" checked />
-                <label for="radarrEnabled">Enable Radarr</label>
-            </div>
-            <div class="help-text">Use Radarr for movie torrent searching.</div>
-
-            <div class="form-group">
-                <label for="radarrUrl">Radarr Server URL</label>
-                <input type="text" id="radarrUrl" value="http://localhost:7878" placeholder="http://localhost:7878" />
-                <div class="help-text">
-                    URL of your Radarr instance.
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="radarrApiKey">Radarr API Key</label>
-                <input type="text" id="radarrApiKey" placeholder="Enter your Radarr API key..." />
-                <div class="help-text">
-                    Found in Radarr Settings > General > Security > API Key.
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="radarrQualityProfile">Quality Profile ID</label>
-                <input type="number" id="radarrQualityProfile" value="1" min="1" />
-                <div class="help-text">
-                    Quality profile to use when adding movies (found in Radarr Settings > Profiles).
-                </div>
-            </div>
-        </div>
-
-        <div class="button-group">
-            <button class="btn btn-test" onclick="testConfiguration()">Test Configuration</button>
-            <button class="btn btn-primary" onclick="saveConfiguration()">Save Settings</button>
-            <button class="btn btn-secondary" onclick="resetConfiguration()">Reset to Defaults</button>
         </div>
     </div>
 
-    <div id="notification" class="notification"></div>
+    <script type="text/javascript">
+        // Simple configuration page using Jellyfin's built-in APIs
+        (function () {
+            const pluginId = "a8b4d8c6-3f2a-4d7e-9b1c-5e8f2a9d3c7b";
 
-    <script>
-        class ConfigurationManager {
-            constructor() {
-                this.loadConfiguration();
-            }
+            function loadPage() {
+                Dashboard.showLoadingMsg();
 
-            async loadConfiguration() {
-                try {
-                    const response = await fetch('/jellyscout/status');
-                    if (response.ok) {
-                        const config = await response.json();
-                        this.populateForm(config);
-                        this.updateApiKeyStatus(config.configured);
-                    }
-                } catch (error) {
-                    console.error('Failed to load configuration:', error);
-                    this.showNotification('Failed to load current configuration', 'error');
-                }
-            }
-
-            populateForm(config) {
-                document.getElementById('enableStreaming').checked = config.streamingEnabled ?? true;
-                document.getElementById('enableDownloads').checked = config.downloadsEnabled ?? true;
-                document.getElementById('enableNotifications').checked = config.notificationsEnabled ?? true;
-                document.getElementById('autoCheckLibrary').checked = config.autoCheckLibrary ?? true;
-                
-                // Note: TMDB API key is not returned for security reasons
-                // The user will need to re-enter it if making changes
-            }
-
-            updateApiKeyStatus(configured) {
-                const statusElement = document.getElementById('apiKeyStatus');
-                const dot = statusElement.querySelector('.status-dot');
-                const text = statusElement.querySelector('span:last-child');
-                
-                if (configured) {
-                    dot.className = 'status-dot active';
-                    text.textContent = 'Configured';
-                } else {
-                    dot.className = 'status-dot inactive';
-                    text.textContent = 'Not configured';
-                }
-            }
-
-            getFormData() {
-                return {
-                    tmdbApiKey: document.getElementById('tmdbApiKey').value.trim(),
-                    enableStreaming: document.getElementById('enableStreaming').checked,
-                    enableDownloads: document.getElementById('enableDownloads').checked,
-                    enableNotifications: document.getElementById('enableNotifications').checked,
-                    autoCheckLibrary: document.getElementById('autoCheckLibrary').checked,
-                    defaultQuality: document.getElementById('defaultQuality').value,
-                    maxSearchResults: parseInt(document.getElementById('maxSearchResults').value),
-                    apiTimeoutSeconds: parseInt(document.getElementById('apiTimeout').value)
-                };
-            }
-
-            async saveConfiguration() {
-                try {
-                    const config = this.getFormData();
+                ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                    // Load configuration values
+                    document.querySelector('#EnableStreaming').checked = config.EnableStreaming || false;
+                    document.querySelector('#EnableDownloads').checked = config.EnableDownloads || false;
+                    document.querySelector('#TmdbApiKey').value = config.TmdbApiKey || '';
+                    document.querySelector('#MaxSearchResults').value = config.MaxSearchResults || 50;
+                    document.querySelector('#DefaultQuality').value = config.DefaultQuality || '1080p';
+                    document.querySelector('#EnableNotifications').checked = config.EnableNotifications || false;
                     
-                    if (!config.tmdbApiKey) {
-                        this.showNotification('TMDB API key is required', 'error');
-                        return;
+                    // Load external service configurations
+                    if (config.SonarrConfig) {
+                        document.querySelector('#SonarrServerUrl').value = config.SonarrConfig.ServerUrl || '';
+                        document.querySelector('#SonarrApiKey').value = config.SonarrConfig.ApiKey || '';
+                    }
+                    
+                    if (config.RadarrConfig) {
+                        document.querySelector('#RadarrServerUrl').value = config.RadarrConfig.ServerUrl || '';
+                        document.querySelector('#RadarrApiKey').value = config.RadarrConfig.ApiKey || '';
                     }
 
-                    // Build full configuration object
-                    const fullConfig = {
-                        tmdbApiKey: config.tmdbApiKey,
-                        enableStreaming: config.enableStreaming,
-                        enableDownloads: config.enableDownloads,
-                        enableNotifications: config.enableNotifications,
-                        autoCheckLibrary: config.autoCheckLibrary,
-                        defaultQuality: config.defaultQuality,
-                        maxSearchResults: config.maxSearchResults,
-                        apiTimeoutSeconds: config.apiTimeoutSeconds,
-                        cacheExpirationMinutes: 60,
-                        maxConcurrentRequests: 10,
-                        enableRateLimiting: true,
-                        requestsPerSecond: 10,
-                        streamioConfig: {
-                            enabled: document.getElementById('streamioEnabled').checked,
-                            serverUrl: document.getElementById('streamioUrl').value,
-                            apiKey: "", // Not used anymore
-                            timeoutSeconds: 30,
-                            useHttps: document.getElementById('streamioHttps').checked,
-                            clientType: document.getElementById('torrentClientType').value,
-                            torrentClientUrl: document.getElementById('torrentClientUrl').value,
-                            torrentClientUsername: document.getElementById('torrentClientUsername').value,
-                            torrentClientPassword: document.getElementById('torrentClientPassword').value
-                        },
-                        sonarrConfig: {
-                            enabled: document.getElementById('sonarrEnabled').checked,
-                            serverUrl: document.getElementById('sonarrUrl').value,
-                            apiKey: document.getElementById('sonarrApiKey').value,
-                            timeoutSeconds: 30,
-                            qualityProfileId: parseInt(document.getElementById('sonarrQualityProfile').value),
-                            qualityProfile: "HD-1080p"
-                        },
-                        radarrConfig: {
-                            enabled: document.getElementById('radarrEnabled').checked,
-                            serverUrl: document.getElementById('radarrUrl').value,
-                            apiKey: document.getElementById('radarrApiKey').value,
-                            timeoutSeconds: 30,
-                            qualityProfileId: parseInt(document.getElementById('radarrQualityProfile').value),
-                            qualityProfile: "HD-1080p"
-                        }
-                    };
+                    Dashboard.hideLoadingMsg();
+                });
+            }
 
-                    // Save configuration via API
-                    const response = await fetch('/jellyscout/config/save', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(fullConfig)
+            function saveConfiguration() {
+                Dashboard.showLoadingMsg();
+
+                // Get current configuration
+                ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                    // Update configuration values
+                    config.EnableStreaming = document.querySelector('#EnableStreaming').checked;
+                    config.EnableDownloads = document.querySelector('#EnableDownloads').checked;
+                    config.TmdbApiKey = document.querySelector('#TmdbApiKey').value;
+                    config.MaxSearchResults = parseInt(document.querySelector('#MaxSearchResults').value) || 50;
+                    config.DefaultQuality = document.querySelector('#DefaultQuality').value;
+                    config.EnableNotifications = document.querySelector('#EnableNotifications').checked;
+                    
+                    // Update external service configurations
+                    config.SonarrConfig = config.SonarrConfig || {};
+                    config.SonarrConfig.ServerUrl = document.querySelector('#SonarrServerUrl').value;
+                    config.SonarrConfig.ApiKey = document.querySelector('#SonarrApiKey').value;
+                    config.SonarrConfig.Enabled = !!(config.SonarrConfig.ServerUrl && config.SonarrConfig.ApiKey);
+                    
+                    config.RadarrConfig = config.RadarrConfig || {};
+                    config.RadarrConfig.ServerUrl = document.querySelector('#RadarrServerUrl').value;
+                    config.RadarrConfig.ApiKey = document.querySelector('#RadarrApiKey').value;
+                    config.RadarrConfig.Enabled = !!(config.RadarrConfig.ServerUrl && config.RadarrConfig.ApiKey);
+
+                    // Save configuration
+                    ApiClient.updatePluginConfiguration(pluginId, config).then(function () {
+                        Dashboard.processPluginConfigurationUpdateResult();
                     });
-
-                    if (response.ok) {
-                        this.showNotification('Configuration saved successfully!', 'success');
-                        this.updateApiKeyStatus(true);
-                    } else {
-                        const errorData = await response.json();
-                        this.showNotification(`Failed to save configuration: ${errorData.error}`, 'error');
-                    }
-                    
-                } catch (error) {
-                    console.error('Failed to save configuration:', error);
-                    this.showNotification('Failed to save configuration', 'error');
-                }
+                });
             }
 
-            async testConfiguration() {
-                try {
-                    const apiKey = document.getElementById('tmdbApiKey').value.trim();
-                    
-                    if (!apiKey) {
-                        this.showNotification('Please enter a TMDB API key to test', 'error');
-                        return;
-                    }
+            // Event listeners
+            document.querySelector('.jellyscoutConfigForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                saveConfiguration();
+                return false;
+            });
 
-                    this.showNotification('Testing TMDB API connection...', 'info');
-                    
-                    // Test the API key with a simple request
-                    const response = await fetch(`https://api.themoviedb.org/3/configuration?api_key=${apiKey}`);
-                    
-                    if (response.ok) {
-                        this.showNotification('✅ TMDB API key is valid!', 'success');
-                        this.updateApiKeyStatus(true);
-                    } else {
-                        this.showNotification('❌ TMDB API key is invalid or expired', 'error');
-                        this.updateApiKeyStatus(false);
-                    }
-                } catch (error) {
-                    console.error('Test failed:', error);
-                    this.showNotification('❌ Failed to test API key. Check your internet connection.', 'error');
-                }
-            }
-
-            resetConfiguration() {
-                document.getElementById('tmdbApiKey').value = '';
-                document.getElementById('enableStreaming').checked = true;
-                document.getElementById('enableDownloads').checked = true;
-                document.getElementById('enableNotifications').checked = true;
-                document.getElementById('autoCheckLibrary').checked = true;
-                document.getElementById('defaultQuality').value = '1080p';
-                document.getElementById('maxSearchResults').value = 50;
-                document.getElementById('apiTimeout').value = 30;
-                
-                // Reset streaming configuration
-                document.getElementById('streamioEnabled').checked = false;
-                document.getElementById('torrentClientType').value = 'qbittorrent';
-                document.getElementById('torrentClientUrl').value = 'http://localhost:8080';
-                document.getElementById('torrentClientUsername').value = 'admin';
-                document.getElementById('torrentClientPassword').value = '';
-                document.getElementById('streamioUrl').value = 'http://localhost:3000';
-                document.getElementById('streamioHttps').checked = false;
-                
-                // Reset Sonarr configuration
-                document.getElementById('sonarrEnabled').checked = true;
-                document.getElementById('sonarrUrl').value = 'http://localhost:8989';
-                document.getElementById('sonarrApiKey').value = '';
-                document.getElementById('sonarrQualityProfile').value = 1;
-                
-                // Reset Radarr configuration
-                document.getElementById('radarrEnabled').checked = true;
-                document.getElementById('radarrUrl').value = 'http://localhost:7878';
-                document.getElementById('radarrApiKey').value = '';
-                document.getElementById('radarrQualityProfile').value = 1;
-                
-                this.updateApiKeyStatus(false);
-                this.showNotification('Configuration reset to defaults', 'info');
-            }
-
-            showNotification(message, type = 'info') {
-                const notification = document.getElementById('notification');
-                if (!notification) {
-                    console.error('Notification element not found');
-                    return;
-                }
-                
-                notification.textContent = message;
-                notification.className = `notification ${type} show`;
-
-                setTimeout(() => {
-                    if (notification && notification.classList) {
-                        notification.classList.remove('show');
-                    }
-                }, 5000);
-            }
-        }
-
-        // Initialize when DOM is ready
-        let configManager;
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            configManager = new ConfigurationManager();
-        });
-        
-        // Global functions for onclick handlers
-        function saveConfiguration() {
-            if (configManager) {
-                configManager.saveConfiguration();
-            }
-        }
-        
-        function testConfiguration() {
-            if (configManager) {
-                configManager.testConfiguration();
-            }
-        }
-        
-        function resetConfiguration() {
-            if (configManager) {
-                configManager.resetConfiguration();
-            }
-        }
+            // Load page when ready
+            pageClassOn('pageshow', "configurationPage", loadPage);
+        })();
     </script>
 </body>
 </html> 
