@@ -9,6 +9,14 @@
     "category": "Streaming",
     "versions": [
       {
+        "version": "0.0.3",
+        "changelog": "Fixed configuration page loading issue and corrected plugin GUID. Configuration page should now work properly in Jellyfin admin.",
+        "targetAbi": "10.9.0.0",
+        "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.0.3/JellyScout-v0.0.3.zip",
+        "checksum": "cf7940f8a9456685f479a066aad5cf23",
+        "timestamp": "2024-12-19T18:40:00Z"
+      },
+      {
         "version": "0.0.2",
         "changelog": "Complete rewrite with modern architecture, API integration, and enhanced features. Added comprehensive API integration with Streamio, Sonarr, and Radarr. Implemented advanced filtering, playlist support, and configuration validation.",
         "targetAbi": "10.9.0.0",

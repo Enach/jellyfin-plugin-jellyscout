@@ -42,7 +42,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     /// <summary>
     /// Gets the plugin ID.
     /// </summary>
-    public override Guid Id => Guid.Parse("12345678-1234-1234-1234-123456789abc");
+    public override Guid Id => Guid.Parse("a8b4d8c6-3f2a-4d7e-9b1c-5e8f2a9d3c7b");
 
     /// <summary>
     /// Gets the plugin configuration pages.
@@ -54,7 +54,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
         {
             new PluginPageInfo
             {
-                Name = "JellyScout",
+                Name = "JellyScout Catalog",
                 EmbeddedResourcePath = string.Format(
                     "{0}.Web.CatalogPage.html",
                     GetType().Namespace),
@@ -64,7 +64,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
             },
             new PluginPageInfo
             {
-                Name = "JellyScout Configuration",
+                Name = "JellyScout",
                 EmbeddedResourcePath = string.Format(
                     "{0}.Web.ConfigurationPage.html",
                     GetType().Namespace),
