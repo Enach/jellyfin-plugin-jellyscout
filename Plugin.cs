@@ -56,6 +56,14 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
         {
             new PluginPageInfo
             {
+                Name = "JellyScout",
+                EmbeddedResourcePath = string.Format(
+                    "{0}.Web.ConfigurationPage.html",
+                    GetType().Namespace),
+                EnableInMainMenu = false
+            },
+            new PluginPageInfo
+            {
                 Name = "JellyScoutCatalog",
                 EmbeddedResourcePath = string.Format(
                     "{0}.Web.CatalogPage.html",
@@ -63,14 +71,6 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
                 EnableInMainMenu = true,
                 MenuSection = "server",
                 MenuIcon = "search"
-            },
-            new PluginPageInfo
-            {
-                Name = "JellyScout",
-                EmbeddedResourcePath = string.Format(
-                    "{0}.Web.ConfigurationPage.html",
-                    GetType().Namespace),
-                EnableInMainMenu = false
             }
         };
     }

@@ -4804,7 +4804,7 @@
     "/Users/nicolashochart/.nuget/packages/": {}
   },
   "project": {
-    "version": "0.0.7",
+    "version": "0.0.8",
     "restore": {
       "projectUniqueName": "/Users/nicolashochart/Perso/jellyfin-plugin-jellyscout/Jellyfin.Plugin.JellyScout.csproj",
       "projectName": "Jellyfin.Plugin.JellyScout",

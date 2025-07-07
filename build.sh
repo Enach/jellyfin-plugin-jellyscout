@@ -9,7 +9,7 @@ echo "🔨 Building JellyScout Plugin..."
 
 # Configuration
 PROJECT_NAME="Jellyfin.Plugin.JellyScout"
-VERSION="0.0.7"
+VERSION="0.0.8"
 BUILD_DIR="bin/Release/net8.0"
 DIST_DIR="dist"
 PACKAGE_NAME="JellyScout-v${VERSION}"
@@ -33,7 +33,6 @@ mkdir -p ${DIST_DIR}/${PACKAGE_NAME}
 # Copy built files
 echo "📋 Copying files..."
 cp ${BUILD_DIR}/*.dll ${DIST_DIR}/${PACKAGE_NAME}/
-cp ${BUILD_DIR}/*.pdb ${DIST_DIR}/${PACKAGE_NAME}/
 cp icon.png ${DIST_DIR}/${PACKAGE_NAME}/
 
 # Create zip package with flat structure
