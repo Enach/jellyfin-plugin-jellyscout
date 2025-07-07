@@ -45,7 +45,10 @@ public class PluginImageController : ControllerBase
 
             // Get the embedded icon resource
             var assembly = Assembly.GetExecutingAssembly();
-            var resourceName = $"{GetType().Namespace?.Replace(".Controllers", "")}.icon.png";
+            var resourceName = "Jellyfin.Plugin.JellyScout.icon.png";
+            
+            _logger.LogDebug("Looking for resource: {ResourceName}", resourceName);
+            _logger.LogDebug("Available resources: {Resources}", string.Join(", ", assembly.GetManifestResourceNames()));
             
             using var stream = assembly.GetManifestResourceStream(resourceName);
             if (stream == null)

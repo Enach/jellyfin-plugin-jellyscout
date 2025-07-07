@@ -5,7 +5,7 @@
   },
   "projects": {
     "/Users/nicolashochart/Perso/jellyfin-plugin-jellyscout/Jellyfin.Plugin.JellyScout.csproj": {
-      "version": "0.0.8",
+      "version": "0.0.9",
       "restore": {
         "projectUniqueName": "/Users/nicolashochart/Perso/jellyfin-plugin-jellyscout/Jellyfin.Plugin.JellyScout.csproj",
         "projectName": "Jellyfin.Plugin.JellyScout",
