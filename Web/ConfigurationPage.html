@@ -79,6 +79,32 @@
                         <div class="fieldDescription">Found in Radarr Settings > General > Security (optional)</div>
                     </div>
                     
+                    <h3 class="sectionTitle">Streaming Services</h3>
+                    
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="ProwlarrServerUrl">Prowlarr Server URL</label>
+                        <input is="emby-input" type="text" id="ProwlarrServerUrl" name="ProwlarrServerUrl" placeholder="http://localhost:9696" />
+                        <div class="fieldDescription">URL of your Prowlarr instance for torrent search</div>
+                    </div>
+                    
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="ProwlarrApiKey">Prowlarr API Key</label>
+                        <input is="emby-input" type="password" id="ProwlarrApiKey" name="ProwlarrApiKey" />
+                        <div class="fieldDescription">Found in Prowlarr Settings > General > Security (for streaming)</div>
+                    </div>
+                    
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="MinSeeders">Minimum Seeders for Streaming</label>
+                        <input is="emby-input" type="number" id="MinSeeders" name="MinSeeders" min="1" max="100" value="10" />
+                        <div class="fieldDescription">Minimum number of seeders required to show streaming option</div>
+                    </div>
+                    
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="BitPlayServerUrl">BitPlay Server URL</label>
+                        <input is="emby-input" type="text" id="BitPlayServerUrl" name="BitPlayServerUrl" placeholder="http://localhost:3347" />
+                        <div class="fieldDescription">URL of your BitPlay streaming server</div>
+                    </div>
+                    
                     <div class="checkboxContainer checkboxContainer-withDescription">
                         <label>
                             <input type="checkbox" is="emby-checkbox" id="EnableNotifications" />
@@ -125,6 +151,18 @@
                         document.querySelector('#RadarrServerUrl').value = config.RadarrConfig.ServerUrl || '';
                         document.querySelector('#RadarrApiKey').value = config.RadarrConfig.ApiKey || '';
                     }
+                    
+                    // Load Prowlarr configuration
+                    if (config.ProwlarrConfig) {
+                        document.querySelector('#ProwlarrServerUrl').value = config.ProwlarrConfig.ServerUrl || '';
+                        document.querySelector('#ProwlarrApiKey').value = config.ProwlarrConfig.ApiKey || '';
+                        document.querySelector('#MinSeeders').value = config.ProwlarrConfig.MinSeeders || 10;
+                    }
+                    
+                    // Load BitPlay configuration
+                    if (config.BitPlayConfig) {
+                        document.querySelector('#BitPlayServerUrl').value = config.BitPlayConfig.ServerUrl || 'http://localhost:3347';
+                    }
 
                     Dashboard.hideLoadingMsg();
                 });
@@ -153,6 +191,18 @@
                     config.RadarrConfig.ServerUrl = document.querySelector('#RadarrServerUrl').value;
                     config.RadarrConfig.ApiKey = document.querySelector('#RadarrApiKey').value;
                     config.RadarrConfig.Enabled = !!(config.RadarrConfig.ServerUrl && config.RadarrConfig.ApiKey);
+                    
+                    // Update Prowlarr configuration
+                    config.ProwlarrConfig = config.ProwlarrConfig || {};
+                    config.ProwlarrConfig.ServerUrl = document.querySelector('#ProwlarrServerUrl').value;
+                    config.ProwlarrConfig.ApiKey = document.querySelector('#ProwlarrApiKey').value;
+                    config.ProwlarrConfig.MinSeeders = parseInt(document.querySelector('#MinSeeders').value) || 10;
+                    config.ProwlarrConfig.Enabled = !!(config.ProwlarrConfig.ServerUrl && config.ProwlarrConfig.ApiKey);
+                    
+                    // Update BitPlay configuration
+                    config.BitPlayConfig = config.BitPlayConfig || {};
+                    config.BitPlayConfig.ServerUrl = document.querySelector('#BitPlayServerUrl').value || 'http://localhost:3347';
+                    config.BitPlayConfig.Enabled = !!(config.BitPlayConfig.ServerUrl);
 
                     // Save configuration
                     ApiClient.updatePluginConfiguration(pluginId, config).then(function () {

@@ -145,6 +145,15 @@
             background: #c0392b;
         }
         
+        .btn-stream {
+            background: #9b59b6;
+            color: white;
+        }
+        
+        .btn-stream:hover {
+            background: #8e44ad;
+        }
+        
         .btn-details {
             background: #666;
             color: white;
@@ -152,6 +161,64 @@
         
         .btn-details:hover {
             background: #555;
+        }
+        
+        .streaming-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .streaming-modal-content {
+            background: #1e1e1e;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90%;
+            overflow: hidden;
+        }
+        
+        .streaming-modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .streaming-modal-header h3 {
+            margin: 0;
+            color: #fff;
+        }
+        
+        .close-streaming {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-streaming:hover {
+            background: #333;
+        }
+        
+        .streaming-modal-body {
+            padding: 0;
         }
         
         .loading {
@@ -234,6 +301,19 @@
         <div id="noResults" class="no-results" style="display: none;">
             No results found. Try a different search term.
         </div>
+        
+        <!-- Streaming Modal -->
+        <div id="streamingModal" class="streaming-modal" style="display: none;">
+            <div class="streaming-modal-content">
+                <div class="streaming-modal-header">
+                    <h3 id="streamingTitle">Streaming Content</h3>
+                    <button class="close-streaming" onclick="app.closeStreaming()">&times;</button>
+                </div>
+                <div class="streaming-modal-body">
+                    <iframe id="streamingFrame" width="100%" height="500px" frameborder="0" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -269,11 +349,15 @@
                 const tmdbStatus = this.config.TmdbApiKey ? 'configured' : 'not-configured';
                 const sonarrStatus = (this.config.SonarrConfig?.ServerUrl && this.config.SonarrConfig?.ApiKey) ? 'configured' : 'not-configured';
                 const radarrStatus = (this.config.RadarrConfig?.ServerUrl && this.config.RadarrConfig?.ApiKey) ? 'configured' : 'not-configured';
+                const prowlarrStatus = (this.config.ProwlarrConfig?.ServerUrl && this.config.ProwlarrConfig?.ApiKey) ? 'configured' : 'not-configured';
+                const bitPlayStatus = this.config.BitPlayConfig?.ServerUrl ? 'configured' : 'not-configured';
                 
                 statusEl.innerHTML = `
                     <span class="status-indicator status-${tmdbStatus}"></span>TMDB: ${tmdbStatus === 'configured' ? 'Ready' : 'Needs API key'}
                     <span style="margin-left: 20px;"><span class="status-indicator status-${sonarrStatus}"></span>Sonarr: ${sonarrStatus === 'configured' ? 'Ready' : 'Not configured'}</span>
                     <span style="margin-left: 20px;"><span class="status-indicator status-${radarrStatus}"></span>Radarr: ${radarrStatus === 'configured' ? 'Ready' : 'Not configured'}</span>
+                    <span style="margin-left: 20px;"><span class="status-indicator status-${prowlarrStatus}"></span>Prowlarr: ${prowlarrStatus === 'configured' ? 'Ready' : 'Not configured'}</span>
+                    <span style="margin-left: 20px;"><span class="status-indicator status-${bitPlayStatus}"></span>BitPlay: ${bitPlayStatus === 'configured' ? 'Ready' : 'Not configured'}</span>
                 `;
                 
                 if (tmdbStatus === 'not-configured') {
@@ -366,17 +450,63 @@
                             <span>${year || 'Unknown'}</span>
                         </div>
                         <div class="media-overview">${overview.substring(0, 150)}${overview.length > 150 ? '...' : ''}</div>
-                        <div class="media-actions">
-                            ${mediaType === 'tv' ? 
-                                `<button class="action-btn btn-sonarr" onclick="app.addToSonarr(${item.id}, '${title.replace(/'/g, "\\'")}', ${year || 'null'})">Add to Sonarr</button>` :
-                                `<button class="action-btn btn-radarr" onclick="app.addToRadarr(${item.id}, '${title.replace(/'/g, "\\'")}', ${year || 'null'})">Add to Radarr</button>`
-                            }
+                        <div class="media-actions" id="actions-${item.id}">
                             <button class="action-btn btn-details" onclick="app.showDetails(${item.id}, '${mediaType}')">Details</button>
                         </div>
+                        <div class="torrent-info" id="torrent-${item.id}" style="display: none; margin-top: 10px; font-size: 12px; color: #999;"></div>
                     </div>
                 `;
                 
+                // Check torrent availability and update actions
+                this.checkAndUpdateActions(item.id, title, year, mediaType);
+                
                 return card;
+            }
+            
+            async checkAndUpdateActions(tmdbId, title, year, mediaType) {
+                const actionsContainer = document.getElementById(`actions-${tmdbId}`);
+                const torrentInfo = document.getElementById(`torrent-${tmdbId}`);
+                
+                if (!actionsContainer) return;
+                
+                // Start with basic actions
+                const escapedTitle = title.replace(/'/g, "\\'");
+                let actionsHtml = '';
+                
+                // Add download button
+                if (mediaType === 'tv') {
+                    actionsHtml += `<button class="action-btn btn-sonarr" onclick="app.addToSonarr(${tmdbId}, '${escapedTitle}', ${year || 'null'})">Add to Sonarr</button>`;
+                } else {
+                    actionsHtml += `<button class="action-btn btn-radarr" onclick="app.addToRadarr(${tmdbId}, '${escapedTitle}', ${year || 'null'})">Add to Radarr</button>`;
+                }
+                
+                // Check if streaming is configured
+                const prowlarrConfigured = this.config?.ProwlarrConfig?.Enabled;
+                const bitPlayConfigured = this.config?.BitPlayConfig?.Enabled;
+                
+                if (prowlarrConfigured) {
+                    try {
+                        const response = await fetch(`/jellyscout/torrent/check?title=${encodeURIComponent(title)}&year=${year || ''}&mediaType=${mediaType}`);
+                        const torrentData = await response.json();
+                        
+                        if (torrentData.available && torrentData.streamable && bitPlayConfigured) {
+                            // Add stream button
+                            actionsHtml = `<button class="action-btn btn-stream" onclick="app.startStreaming(${tmdbId}, '${escapedTitle}', ${year || 'null'}, '${mediaType}')">🎬 Stream (${torrentData.seeders} seeds)</button>` + actionsHtml;
+                            
+                            // Show torrent info
+                            torrentInfo.innerHTML = `🌱 ${torrentData.seeders} seeds • 🎥 ${torrentData.quality} • 📦 ${torrentData.size} • ${torrentData.health}`;
+                            torrentInfo.style.display = 'block';
+                        } else if (torrentData.available) {
+                            torrentInfo.innerHTML = `🌱 ${torrentData.seeders} seeds (${torrentData.seeders < 10 ? 'Too few for streaming' : 'BitPlay not configured'})`;
+                            torrentInfo.style.display = 'block';
+                        }
+                    } catch (error) {
+                        console.warn('Failed to check torrent availability:', error);
+                    }
+                }
+                
+                actionsHtml += `<button class="action-btn btn-details" onclick="app.showDetails(${tmdbId}, '${mediaType}')">Details</button>`;
+                actionsContainer.innerHTML = actionsHtml;
             }
             
             async addToSonarr(tmdbId, title, year) {
@@ -445,6 +575,51 @@
                 }
             }
             
+            async startStreaming(tmdbId, title, year, mediaType) {
+                try {
+                    this.showMessage('Starting stream...', 'info');
+                    
+                    const response = await fetch('/jellyscout/stream/start', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            tmdbId: tmdbId,
+                            title: title,
+                            year: year,
+                            mediaType: mediaType
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok && data.success) {
+                        this.clearMessages();
+                        this.showMessage(`✅ Stream started! Also queued for download.`, 'success');
+                        
+                        // Show streaming modal with BitPlay player
+                        document.getElementById('streamingTitle').textContent = `Streaming: ${title}`;
+                        document.getElementById('streamingFrame').src = data.playerUrl;
+                        document.getElementById('streamingModal').style.display = 'flex';
+                        
+                        // Show torrent info
+                        const torrentInfo = data.torrentInfo;
+                        this.showMessage(`🎬 Quality: ${torrentInfo.quality} | 🌱 Seeds: ${torrentInfo.seeders} | 📦 Size: ${torrentInfo.size}`, 'info');
+                    } else {
+                        this.showMessage(`❌ ${data.error || 'Failed to start streaming'}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Streaming error:', error);
+                    this.showMessage('Failed to start streaming', 'error');
+                }
+            }
+            
+            closeStreaming() {
+                document.getElementById('streamingModal').style.display = 'none';
+                document.getElementById('streamingFrame').src = '';
+            }
+
             async showDetails(tmdbId, mediaType) {
                 try {
                     const response = await fetch(`/jellyscout/details/${tmdbId}?mediaType=${mediaType}`);

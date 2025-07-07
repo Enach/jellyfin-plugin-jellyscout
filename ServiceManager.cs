@@ -1,6 +1,7 @@
 using System;
 using System.Net.Http;
 using Jellyfin.Plugin.JellyScout.Services;
+using JellyScout.Services;
 using MediaBrowser.Controller.Library;
 using Microsoft.Extensions.Logging;
 
@@ -19,6 +20,8 @@ public static class ServiceManager
     private static NotificationHub? _notificationHub;
     private static SonarrService? _sonarrService;
     private static RadarrService? _radarrService;
+    private static ProwlarrService? _prowlarrService;
+    private static BitPlayService? _bitPlayService;
     private static CacheService? _cacheService;
     private static HealthCheckService? _healthCheckService;
     private static RetryService? _retryService;
@@ -134,6 +137,38 @@ public static class ServiceManager
         }
         
         return _radarrService;
+    }
+
+    /// <summary>
+    /// Gets the Prowlarr service instance.
+    /// </summary>
+    /// <param name="loggerFactory">The logger factory.</param>
+    /// <returns>The Prowlarr service.</returns>
+    public static ProwlarrService GetProwlarrService(ILoggerFactory loggerFactory)
+    {
+        if (_prowlarrService == null)
+        {
+            var config = Plugin.Instance?.Configuration?.ProwlarrConfig ?? new Jellyfin.Plugin.JellyScout.Configuration.ProwlarrConfiguration();
+            _prowlarrService = new ProwlarrService(_httpClient, loggerFactory.CreateLogger<ProwlarrService>(), config);
+        }
+        
+        return _prowlarrService;
+    }
+
+    /// <summary>
+    /// Gets the BitPlay service instance.
+    /// </summary>
+    /// <param name="loggerFactory">The logger factory.</param>
+    /// <returns>The BitPlay service.</returns>
+    public static BitPlayService GetBitPlayService(ILoggerFactory loggerFactory)
+    {
+        if (_bitPlayService == null)
+        {
+            var config = Plugin.Instance?.Configuration?.BitPlayConfig ?? new Jellyfin.Plugin.JellyScout.Configuration.BitPlayConfiguration();
+            _bitPlayService = new BitPlayService(_httpClient, loggerFactory.CreateLogger<BitPlayService>(), config);
+        }
+        
+        return _bitPlayService;
     }
 
     /// <summary>

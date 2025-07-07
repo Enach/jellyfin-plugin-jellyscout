@@ -1,4 +1,5 @@
 using MediaBrowser.Model.Plugins;
+using System.ComponentModel.DataAnnotations;
 
 namespace Jellyfin.Plugin.JellyScout.Configuration;
 
@@ -15,12 +16,12 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Gets or sets a value indicating whether to enable streaming functionality.
     /// </summary>
-    public bool EnableStreaming { get; set; } = true;
+    public bool EnableStreaming { get; set; } = false;
 
     /// <summary>
     /// Gets or sets a value indicating whether to enable download functionality.
     /// </summary>
-    public bool EnableDownloads { get; set; } = true;
+    public bool EnableDownloads { get; set; } = false;
 
     /// <summary>
     /// Gets or sets the maximum number of search results to return.
@@ -45,7 +46,7 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Gets or sets a value indicating whether to enable notifications.
     /// </summary>
-    public bool EnableNotifications { get; set; } = true;
+    public bool EnableNotifications { get; set; } = false;
 
     /// <summary>
     /// Gets or sets the Streamio configuration.
@@ -96,6 +97,16 @@ public class PluginConfiguration : BasePluginConfiguration
     /// Gets or sets the maximum requests per second.
     /// </summary>
     public int RequestsPerSecond { get; set; } = 10;
+
+    /// <summary>
+    /// Gets or sets the Prowlarr configuration.
+    /// </summary>
+    public ProwlarrConfiguration ProwlarrConfig { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the BitPlay configuration.
+    /// </summary>
+    public BitPlayConfiguration BitPlayConfig { get; set; } = new();
 }
 
 /// <summary>
@@ -157,12 +168,12 @@ public class SonarrConfiguration
     /// <summary>
     /// Gets or sets a value indicating whether Sonarr is enabled.
     /// </summary>
-    public bool Enabled { get; set; } = true;
+    public bool Enabled { get; set; } = false;
 
     /// <summary>
     /// Gets or sets the Sonarr server URL.
     /// </summary>
-    public string ServerUrl { get; set; } = "http://localhost:8989";
+    public string ServerUrl { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the Sonarr API key.
@@ -193,12 +204,12 @@ public class RadarrConfiguration
     /// <summary>
     /// Gets or sets a value indicating whether Radarr is enabled.
     /// </summary>
-    public bool Enabled { get; set; } = true;
+    public bool Enabled { get; set; } = false;
 
     /// <summary>
     /// Gets or sets the Radarr server URL.
     /// </summary>
-    public string ServerUrl { get; set; } = "http://localhost:7878";
+    public string ServerUrl { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the Radarr API key.
@@ -219,4 +230,51 @@ public class RadarrConfiguration
     /// Gets or sets the quality profile name.
     /// </summary>
     public string QualityProfile { get; set; } = "HD-1080p";
+}
+
+/// <summary>
+/// Configuration for Prowlarr integration.
+/// </summary>
+public class ProwlarrConfiguration
+{
+    /// <summary>
+    /// Gets or sets a value indicating whether Prowlarr is enabled.
+    /// </summary>
+    public bool Enabled { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets the server URL.
+    /// </summary>
+    public string ServerUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the API key.
+    /// </summary>
+    public string ApiKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the minimum seeders required for streaming.
+    /// </summary>
+    public int MinSeeders { get; set; } = 10;
+}
+
+/// <summary>
+/// Configuration for BitPlay integration.
+/// </summary>
+public class BitPlayConfiguration
+{
+    /// <summary>
+    /// Gets or sets a value indicating whether BitPlay is enabled.
+    /// </summary>
+    public bool Enabled { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets the server URL.
+    /// </summary>
+    public string ServerUrl { get; set; } = "http://localhost:3347";
+
+    /// <summary>
+    /// Gets or sets the streaming timeout in seconds.
+    /// </summary>
+    public int StreamingTimeout { get; set; } = 30;
 } 

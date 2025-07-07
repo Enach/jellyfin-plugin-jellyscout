@@ -281,6 +281,8 @@ public class JellyScoutController : ControllerBase
                 tmdbConfigured = !string.IsNullOrWhiteSpace(config?.TmdbApiKey),
                 sonarrEnabled = config?.SonarrConfig?.Enabled == true,
                 radarrEnabled = config?.RadarrConfig?.Enabled == true,
+                prowlarrEnabled = config?.ProwlarrConfig?.Enabled == true,
+                bitPlayEnabled = config?.BitPlayConfig?.Enabled == true,
                 timestamp = DateTime.UtcNow
             });
         }
@@ -288,6 +290,156 @@ public class JellyScoutController : ControllerBase
         {
             _logger.LogError(ex, "Error getting plugin status");
             return StatusCode(500, new { error = "Failed to get status" });
+        }
+    }
+
+    /// <summary>
+    /// Checks torrent availability for content via Prowlarr.
+    /// </summary>
+    /// <param name="title">The content title.</param>
+    /// <param name="year">The release year.</param>
+    /// <param name="mediaType">The media type (movie or tv).</param>
+    /// <returns>Torrent availability information.</returns>
+    [HttpGet("torrent/check")]
+    public async Task<IActionResult> CheckTorrentAvailability([FromQuery] string title, [FromQuery] int? year, [FromQuery] string mediaType = "movie")
+    {
+        try
+        {
+            var config = Plugin.Instance?.Configuration;
+            if (config?.ProwlarrConfig?.Enabled != true)
+            {
+                return Ok(new { available = false, streamable = false, error = "Prowlarr not configured" });
+            }
+
+            var prowlarrService = ServiceManager.GetProwlarrService(_loggerFactory);
+            
+            // Build search query
+            var searchQuery = title;
+            if (year.HasValue)
+            {
+                searchQuery += $" {year}";
+            }
+            
+            var bestTorrent = await prowlarrService.GetBestTorrentForStreamingAsync(searchQuery, mediaType);
+            
+            if (bestTorrent != null)
+            {
+                return Ok(new
+                {
+                    available = true,
+                    streamable = bestTorrent.IsStreamable,
+                    seeders = bestTorrent.Seeders,
+                    quality = bestTorrent.Quality,
+                    size = bestTorrent.FormattedSize,
+                    health = bestTorrent.HealthRating,
+                    title = bestTorrent.Title
+                });
+            }
+            
+            return Ok(new { available = false, streamable = false });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking torrent availability for {Title}", title);
+            return Ok(new { available = false, streamable = false, error = "Check failed" });
+        }
+    }
+
+    /// <summary>
+    /// Starts streaming for content.
+    /// </summary>
+    /// <param name="request">The streaming request.</param>
+    /// <returns>Streaming information.</returns>
+    [HttpPost("stream/start")]
+    public async Task<IActionResult> StartStreaming([FromBody] StreamStartRequest request)
+    {
+        try
+        {
+            var config = Plugin.Instance?.Configuration;
+            if (config?.ProwlarrConfig?.Enabled != true)
+            {
+                return BadRequest(new { error = "Prowlarr not configured" });
+            }
+            if (config?.BitPlayConfig?.Enabled != true)
+            {
+                return BadRequest(new { error = "BitPlay not configured" });
+            }
+
+            var prowlarrService = ServiceManager.GetProwlarrService(_loggerFactory);
+            var bitPlayService = ServiceManager.GetBitPlayService(_loggerFactory);
+            
+            // Search for the best torrent
+            var searchQuery = request.Title;
+            if (request.Year.HasValue)
+            {
+                searchQuery += $" {request.Year}";
+            }
+            
+            var bestTorrent = await prowlarrService.GetBestTorrentForStreamingAsync(searchQuery, request.MediaType);
+            
+            if (bestTorrent == null || !bestTorrent.IsStreamable)
+            {
+                return BadRequest(new { error = "No suitable torrent found for streaming" });
+            }
+            
+            // Start streaming via BitPlay using the Prowlarr download URL
+            var streamingInfo = await bitPlayService.StartStreamingFromUrlAsync(bestTorrent.DownloadUrl, bestTorrent.Title);
+            
+            if (!streamingInfo.Success)
+            {
+                // Try magnet URL if download URL fails
+                if (!string.IsNullOrEmpty(bestTorrent.MagnetUrl))
+                {
+                    streamingInfo = await bitPlayService.StartStreamingFromMagnetAsync(bestTorrent.MagnetUrl, bestTorrent.Title);
+                }
+            }
+            
+            if (streamingInfo.Success)
+            {
+                // Always queue download to Radarr/Sonarr
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        if (request.MediaType.ToLower() == "tv")
+                        {
+                            var sonarrService = ServiceManager.GetSonarrService(_loggerFactory);
+                            await sonarrService.AddTVShowAsync(request.Title, request.TmdbId, request.Year ?? 0, 1);
+                        }
+                        else
+                        {
+                            var radarrService = ServiceManager.GetRadarrService(_loggerFactory);
+                            await radarrService.AddMovieAsync(request.Title, request.TmdbId, request.Year ?? 0, 1);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to queue download for {Title} while streaming", request.Title);
+                    }
+                });
+                
+                return Ok(new
+                {
+                    success = true,
+                    streamUrl = streamingInfo.StreamUrl,
+                    playerUrl = streamingInfo.PlayerUrl,
+                    streamId = streamingInfo.StreamId,
+                    torrentInfo = new
+                    {
+                        title = bestTorrent.Title,
+                        quality = bestTorrent.Quality,
+                        seeders = bestTorrent.Seeders,
+                        size = bestTorrent.FormattedSize
+                    }
+                });
+            }
+            
+            return BadRequest(new { error = streamingInfo.Error ?? "Failed to start streaming" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error starting stream for {Title}", request?.Title);
+            return StatusCode(500, new { error = "Failed to start streaming" });
         }
     }
 }
@@ -301,4 +453,15 @@ public class AddMediaRequest
     public int TmdbId { get; set; }
     public int? Year { get; set; }
     public int? QualityProfileId { get; set; }
+}
+
+/// <summary>
+/// Request model for starting a stream
+/// </summary>
+public class StreamStartRequest
+{
+    public string Title { get; set; } = string.Empty;
+    public int TmdbId { get; set; }
+    public int? Year { get; set; }
+    public string MediaType { get; set; } = "movie";
 } 
