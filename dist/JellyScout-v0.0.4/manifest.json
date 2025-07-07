@@ -13,8 +13,8 @@
         "changelog": "Fixed configuration page loading issue and corrected plugin GUID. Configuration page should now work properly in Jellyfin admin.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.0.3/JellyScout-v0.0.3.zip",
-        "checksum": "cf7940f8a9456685f479a066aad5cf23",
-        "timestamp": "2024-12-19T18:40:00Z"
+        "checksum": "8046f2444b26bc60d5546d64beca9e14",
+        "timestamp": "2025-07-07T18:53:01Z"
       },
       {
         "version": "0.0.2",
@@ -22,7 +22,7 @@
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.0.2/JellyScout-v0.0.2.zip",
         "checksum": "ba5c8e5026ef84729ddddcadd84dd1c5",
-        "timestamp": "2024-12-19T12:00:00Z"
+        "timestamp": "2025-07-07T18:22:31Z"
       },
       {
         "version": "0.0.1",
@@ -30,7 +30,7 @@
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.0.1/Jellyfin.Plugin.JellyScout.zip",
         "checksum": "placeholder_checksum_for_v0.0.1",
-        "timestamp": "2024-12-01T12:00:00Z"
+        "timestamp": "2025-07-07T17:38:08Z"
       }
     ]
   }
