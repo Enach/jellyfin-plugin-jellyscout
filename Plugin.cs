@@ -63,7 +63,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
             new PluginPageInfo
             {
                 Name = "JellyScout Catalog",
-                EmbeddedResourcePath = GetType().Namespace + ".Web.CatalogPage.html",
+                EmbeddedResourcePath = GetType().Namespace + ".Web.index.html",
                 EnableInMainMenu = true,
                 MenuSection = "server",
                 MenuIcon = "search"
