@@ -34,130 +34,102 @@ public class PluginConfiguration : BasePluginConfiguration
     public string DefaultQuality { get; set; } = "1080p";
 
     /// <summary>
-    /// Gets or sets a value indicating whether to automatically check if items exist in the library.
-    /// </summary>
-    public bool AutoCheckLibrary { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets the timeout for external API requests in seconds.
-    /// </summary>
-    public int ApiTimeoutSeconds { get; set; } = 30;
-
-    /// <summary>
     /// Gets or sets a value indicating whether to enable notifications.
     /// </summary>
     public bool EnableNotifications { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets the Streamio configuration.
+    /// Gets or sets the Sonarr server URL.
     /// </summary>
-    public StreamioConfiguration StreamioConfig { get; set; } = new();
+    public string SonarrServerUrl { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the Sonarr configuration.
+    /// Gets or sets the Sonarr API key.
     /// </summary>
-    public SonarrConfiguration SonarrConfig { get; set; } = new();
+    public string SonarrApiKey { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the Radarr configuration.
+    /// Gets or sets the Radarr server URL.
     /// </summary>
-    public RadarrConfiguration RadarrConfig { get; set; } = new();
+    public string RadarrServerUrl { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the Streamio configuration (alias for StreamioConfig).
+    /// Gets or sets the Radarr API key.
     /// </summary>
-    public StreamioConfiguration Streamio => StreamioConfig;
+    public string RadarrApiKey { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the Sonarr configuration (alias for SonarrConfig).
+    /// Gets or sets the Prowlarr server URL.
     /// </summary>
-    public SonarrConfiguration Sonarr => SonarrConfig;
+    public string ProwlarrServerUrl { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the Radarr configuration (alias for RadarrConfig).
+    /// Gets or sets the Prowlarr API key.
     /// </summary>
-    public RadarrConfiguration Radarr => RadarrConfig;
+    public string ProwlarrApiKey { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the cache expiration time in minutes.
+    /// Gets or sets the minimum number of seeders for streaming.
     /// </summary>
+    public int MinSeeders { get; set; } = 10;
+
+    /// <summary>
+    /// Gets or sets the BitPlay server URL.
+    /// </summary>
+    public string BitPlayServerUrl { get; set; } = "http://localhost:3347";
+
+    // Properties needed by existing services to prevent build errors
+    public bool AutoCheckLibrary { get; set; } = true;
     public int CacheExpirationMinutes { get; set; } = 60;
-
-    /// <summary>
-    /// Gets or sets the maximum number of concurrent requests.
-    /// </summary>
     public int MaxConcurrentRequests { get; set; } = 10;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether rate limiting is enabled.
-    /// </summary>
     public bool EnableRateLimiting { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets the maximum requests per second.
-    /// </summary>
     public int RequestsPerSecond { get; set; } = 10;
 
-    /// <summary>
-    /// Gets or sets the Prowlarr configuration.
-    /// </summary>
-    public ProwlarrConfiguration ProwlarrConfig { get; set; } = new();
+    // Backward compatibility properties that populate from flat properties
+    public SonarrConfiguration SonarrConfig => new()
+    {
+        Enabled = SonarrEnabled,
+        ServerUrl = SonarrServerUrl,
+        ApiKey = SonarrApiKey,
+        TimeoutSeconds = 30,
+        QualityProfileId = 1,
+        QualityProfile = "HD-1080p"
+    };
 
-    /// <summary>
-    /// Gets or sets the BitPlay configuration.
-    /// </summary>
-    public BitPlayConfiguration BitPlayConfig { get; set; } = new();
-}
+    public RadarrConfiguration RadarrConfig => new()
+    {
+        Enabled = RadarrEnabled,
+        ServerUrl = RadarrServerUrl,
+        ApiKey = RadarrApiKey,
+        TimeoutSeconds = 30,
+        QualityProfileId = 1,
+        QualityProfile = "HD-1080p"
+    };
 
-/// <summary>
-/// Configuration for torrent streaming integration.
-/// </summary>
-public class StreamioConfiguration
-{
-    /// <summary>
-    /// Gets or sets a value indicating whether torrent streaming is enabled.
-    /// </summary>
-    public bool Enabled { get; set; } = false;
+    public ProwlarrConfiguration ProwlarrConfig => new()
+    {
+        Enabled = ProwlarrEnabled,
+        ServerUrl = ProwlarrServerUrl,
+        ApiKey = ProwlarrApiKey,
+        MinSeeders = MinSeeders
+    };
 
-    /// <summary>
-    /// Gets or sets the WebTorrent/streaming server URL (if using external service).
-    /// </summary>
-    public string ServerUrl { get; set; } = "http://localhost:3000";
+    public BitPlayConfiguration BitPlayConfig => new()
+    {
+        Enabled = BitPlayEnabled,
+        ServerUrl = BitPlayServerUrl,
+        StreamingTimeout = 30
+    };
 
-    /// <summary>
-    /// Gets or sets the API key for streaming service.
-    /// </summary>
-    public string ApiKey { get; set; } = string.Empty;
+    // Aliases for backward compatibility
+    public SonarrConfiguration Sonarr => SonarrConfig;
+    public RadarrConfiguration Radarr => RadarrConfig;
 
-    /// <summary>
-    /// Gets or sets the connection timeout in seconds.
-    /// </summary>
-    public int TimeoutSeconds { get; set; } = 30;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether to use HTTPS.
-    /// </summary>
-    public bool UseHttps { get; set; } = false;
-
-    /// <summary>
-    /// Gets or sets the torrent client type (qbittorrent, transmission, webtorrent).
-    /// </summary>
-    public string ClientType { get; set; } = "qbittorrent";
-
-    /// <summary>
-    /// Gets or sets the torrent client web UI URL.
-    /// </summary>
-    public string TorrentClientUrl { get; set; } = "http://localhost:8080";
-
-    /// <summary>
-    /// Gets or sets the torrent client username.
-    /// </summary>
-    public string TorrentClientUsername { get; set; } = "admin";
-
-    /// <summary>
-    /// Gets or sets the torrent client password.
-    /// </summary>
-    public string TorrentClientPassword { get; set; } = string.Empty;
+    // Helper properties
+    public bool SonarrEnabled => !string.IsNullOrEmpty(SonarrServerUrl) && !string.IsNullOrEmpty(SonarrApiKey);
+    public bool RadarrEnabled => !string.IsNullOrEmpty(RadarrServerUrl) && !string.IsNullOrEmpty(RadarrApiKey);
+    public bool ProwlarrEnabled => !string.IsNullOrEmpty(ProwlarrServerUrl) && !string.IsNullOrEmpty(ProwlarrApiKey);
+    public bool BitPlayEnabled => !string.IsNullOrEmpty(BitPlayServerUrl);
 }
 
 /// <summary>

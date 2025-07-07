@@ -15,7 +15,7 @@ using Newtonsoft.Json.Linq;
 namespace Jellyfin.Plugin.JellyScout.Services;
 
 /// <summary>
-/// Service for handling streaming and torrent operations using Streamio.
+/// Service for handling streaming and torrent operations using Sonarr, Radarr, Prowlarr, and BitPlay.
 /// </summary>
 public class StreamingService
 {
@@ -23,7 +23,7 @@ public class StreamingService
     private readonly ILogger<StreamingService> _logger;
     private readonly TMDBService _tmdbService;
     private readonly NotificationService _notificationService;
-    private StreamioConfiguration? _streamioConfig;
+
     private SonarrService? _sonarrService;
     private RadarrService? _radarrService;
     
@@ -45,19 +45,11 @@ public class StreamingService
         _tmdbService = tmdbService;
         _notificationService = notificationService;
         
-        // Configure HttpClient for Streamio
+        // Configure HttpClient timeout
         _httpClient.Timeout = TimeSpan.FromSeconds(30);
     }
 
-    /// <summary>
-    /// Sets the Streamio configuration.
-    /// </summary>
-    /// <param name="config">The Streamio configuration.</param>
-    public void SetStreamioConfiguration(StreamioConfiguration config)
-    {
-        _streamioConfig = config;
-        _httpClient.Timeout = TimeSpan.FromSeconds(config.TimeoutSeconds);
-    }
+
 
     /// <summary>
     /// Searches for torrents based on media information using Sonarr/Radarr APIs.
@@ -319,32 +311,9 @@ public class StreamingService
     {
         try
         {
-            // If you have a WebTorrent server running (like webtorrent-cli --dlna)
-            if (_streamioConfig?.Enabled == true && !string.IsNullOrEmpty(_streamioConfig.ServerUrl))
-            {
-                var request = new
-                {
-                    magnet = magnetLink,
-                    title = title
-                };
-
-                var content = new StringContent(
-                    JsonConvert.SerializeObject(request), 
-                    Encoding.UTF8, 
-                    "application/json");
-
-                var response = await _httpClient.PostAsync(
-                    $"{_streamioConfig.ServerUrl}/stream", 
-                    content);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var responseData = await response.Content.ReadAsStringAsync();
-                    var result = JsonConvert.DeserializeObject<dynamic>(responseData);
-                    return result?.streamUrl?.ToString();
-                }
-            }
-
+            // WebTorrent streaming is not currently configured
+            // This would require a WebTorrent server to be running
+            _logger.LogInformation("WebTorrent streaming is not currently available for: {Title}", title);
             return null;
         }
         catch (Exception ex)
@@ -524,62 +493,4 @@ public class TorrentResult
     public DateTime? UploadDate { get; set; }
 }
 
-/// <summary>
-/// Response model for Streamio streaming requests.
-/// </summary>
-public class StreamioStreamResponse
-{
-    /// <summary>
-    /// Gets or sets the streaming URL.
-    /// </summary>
-    [JsonProperty("stream_url")]
-    public string StreamUrl { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the request was successful.
-    /// </summary>
-    [JsonProperty("success")]
-    public bool Success { get; set; }
-
-    /// <summary>
-    /// Gets or sets the error message if any.
-    /// </summary>
-    [JsonProperty("error")]
-    public string? Error { get; set; }
-
-    /// <summary>
-    /// Gets or sets the torrent info hash.
-    /// </summary>
-    [JsonProperty("info_hash")]
-    public string? InfoHash { get; set; }
-}
-
-/// <summary>
-/// Response model for Streamio download requests.
-/// </summary>
-public class StreamioDownloadResponse
-{
-    /// <summary>
-    /// Gets or sets a value indicating whether the request was successful.
-    /// </summary>
-    [JsonProperty("success")]
-    public bool Success { get; set; }
-
-    /// <summary>
-    /// Gets or sets the download ID.
-    /// </summary>
-    [JsonProperty("download_id")]
-    public string? DownloadId { get; set; }
-
-    /// <summary>
-    /// Gets or sets the error message if any.
-    /// </summary>
-    [JsonProperty("error")]
-    public string? Error { get; set; }
-
-    /// <summary>
-    /// Gets or sets the torrent info hash.
-    /// </summary>
-    [JsonProperty("info_hash")]
-    public string? InfoHash { get; set; }
-} 
+ 

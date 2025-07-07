@@ -43,7 +43,6 @@ public class HealthCheckService
         var tasks = new List<Task<ServiceHealthStatus>>
         {
             CheckTMDBHealthAsync(),
-            CheckStreamioHealthAsync(),
             CheckSonarrHealthAsync(),
             CheckRadarrHealthAsync()
         };
@@ -156,74 +155,7 @@ public class HealthCheckService
         return result;
     }
 
-    /// <summary>
-    /// Checks the health of Streamio service.
-    /// </summary>
-    /// <returns>Streamio health status.</returns>
-    public async Task<ServiceHealthStatus> CheckStreamioHealthAsync()
-    {
-        var result = new ServiceHealthStatus
-        {
-            ServiceName = "Streamio",
-            CheckTime = DateTime.UtcNow
-        };
 
-        try
-        {
-            var config = GetStreamioConfig();
-            if (config == null || !config.Enabled || string.IsNullOrWhiteSpace(config.ServerUrl))
-            {
-                result.Status = HealthStatus.Unhealthy;
-                result.Message = "Streamio is not configured or disabled";
-                return result;
-            }
-
-            var cachedResult = await _cacheService.GetOrCreateAsync("health_check_streamio", async () =>
-            {
-                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                var response = await _httpClient.GetAsync($"{config.ServerUrl.TrimEnd('/')}/health");
-                stopwatch.Stop();
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return new ServiceHealthStatus
-                    {
-                        ServiceName = "Streamio",
-                        Status = stopwatch.ElapsedMilliseconds > 3000 ? HealthStatus.Degraded : HealthStatus.Healthy,
-                        Message = $"Streamio is responding. Response time: {stopwatch.ElapsedMilliseconds}ms",
-                        ResponseTime = stopwatch.ElapsedMilliseconds,
-                        CheckTime = DateTime.UtcNow
-                    };
-                }
-                else
-                {
-                    return new ServiceHealthStatus
-                    {
-                        ServiceName = "Streamio",
-                        Status = HealthStatus.Unhealthy,
-                        Message = $"Streamio returned {response.StatusCode}: {response.ReasonPhrase}",
-                        CheckTime = DateTime.UtcNow
-                    };
-                }
-            }, TimeSpan.FromMinutes(2));
-
-            return cachedResult ?? result;
-        }
-        catch (TaskCanceledException)
-        {
-            result.Status = HealthStatus.Unhealthy;
-            result.Message = "Streamio request timed out";
-            _logger.LogWarning("Streamio health check timed out");
-        }
-        catch (Exception ex)
-        {
-            result.Status = HealthStatus.Unhealthy;
-            result.Message = $"Streamio health check failed: {ex.Message}";
-            _logger.LogError(ex, "Streamio health check failed");
-        }
-
-        return result;
-    }
 
     /// <summary>
     /// Checks the health of Sonarr service.
@@ -385,10 +317,7 @@ public class HealthCheckService
         return apiKey;
     }
 
-    private StreamioConfiguration? GetStreamioConfig()
-    {
-        return Plugin.Instance?.Configuration?.StreamioConfig;
-    }
+
 
     private SonarrConfiguration? GetSonarrConfig()
     {

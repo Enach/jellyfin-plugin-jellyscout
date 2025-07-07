@@ -276,7 +276,10 @@
     </style>
 </head>
 <body>
-    <div class="jellyscout-container">
+    <div data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <div class="jellyscout-container">
         <h1 style="color: #fff; margin-bottom: 10px;">🎬 JellyScout</h1>
         <p style="color: #ccc; margin-bottom: 30px;">Discover movies and TV shows, then add them to Sonarr or Radarr for automated downloading.</p>
         
@@ -671,5 +674,8 @@
             app = new JellyScout();
         });
     </script>
+            </div>
+        </div>
+    </div>
 </body>
 </html> 

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Jellyfin.Plugin.JellyScout")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("0.1.7.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.1.7+9dff632583c861e7a12c24f64df0bedb842e08bb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.1.7+cbb40ee5ee35b9d210e1aebfbb7cc3646187c08c")]
 [assembly: System.Reflection.AssemblyProductAttribute("Jellyfin.Plugin.JellyScout")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Jellyfin.Plugin.JellyScout")]
 [assembly: System.Reflection.AssemblyVersionAttribute("0.1.7.0")]

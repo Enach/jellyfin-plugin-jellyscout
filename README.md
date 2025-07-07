@@ -1,107 +1,155 @@
-# JellyScout - Jellyfin Plugin
+# JellyScout - Jellyfin Content Discovery Plugin
 
-A simple plugin that helps you discover and manage movies and TV shows in your Jellyfin server.
+A comprehensive Jellyfin plugin that enhances your media discovery experience with powerful search capabilities, content recommendations, and seamless integration with your existing media management tools.
 
-JellyScout connects to The Movie Database (TMDB) to let you search for content, see what's already in your library, and optionally stream or download new content through integrations with services like Sonarr and Radarr.
+## Features
 
-## What it does
+- **Content Discovery**: Search and discover movies and TV shows
+- **External Integrations**: Seamlessly connects with Sonarr, Radarr, Prowlarr, and BitPlay
+- **Smart Filtering**: Advanced filtering options with quality preferences
+- **Automatic Downloads**: Request content directly from Jellyfin interface
+- **Health Monitoring**: Built-in health checks for all connected services
+- **Caching**: Intelligent caching for improved performance
+- **Modern UI**: Clean, responsive web interface
 
-- **Search**: Look up movies and TV shows using TMDB's database
-- **Library check**: See if content is already in your Jellyfin library
-- **Streaming**: Stream content directly (if you have Streamio set up)
-- **Downloads**: Add content to Sonarr/Radarr for downloading
-- **Notifications**: Get updates on what's happening
+## Prerequisites
 
-## Getting started
+- Jellyfin server (version 10.8.0 or higher)
+- Optionally: Sonarr, Radarr, Prowlarr, or BitPlay if you want those features
 
-### What you need
-- Jellyfin Server 10.9.0 or newer
-- A free TMDB API key
-- Optionally: Sonarr, Radarr, or Streamio if you want those features
+## Installation
 
-### Installation
+1. Download the latest release from the [releases page](https://github.com/your-username/jellyfin-plugin-jellyscout/releases)
+2. Extract the plugin files to your Jellyfin plugins directory:
+   - Windows: `C:\ProgramData\Jellyfin\Server\plugins\JellyScout`
+   - Linux: `/var/lib/jellyfin/plugins/JellyScout`
+   - macOS: `/var/lib/jellyfin/plugins/JellyScout`
+3. Restart your Jellyfin server
+4. Navigate to **Dashboard > Plugins > JellyScout** to configure
 
-The easiest way is through Jellyfin's plugin catalog:
+## Configuration
 
-1. Go to Jellyfin Admin → Plugins → Catalog
-2. Find "JellyScout" and install it
-3. Restart Jellyfin
-4. Configure the plugin with your TMDB API key
+### Basic Setup
+1. Go to **Dashboard > Plugins > JellyScout**
+2. Configure your external service integrations (optional)
+3. Set your preferred quality and filtering options
+4. Save the configuration
 
-You can also install manually by downloading the latest release and copying the files to your Jellyfin plugins folder.
-
-## Setting it up
-
-### Getting a TMDB API key
-
-1. Go to [TMDB](https://www.themoviedb.org) and create a free account
-2. Go to Settings → API and request an API key
-3. Choose "Developer" when asked about usage
-4. Copy your API key
-
-### Basic configuration
-
-In Jellyfin Admin → Plugins → JellyScout:
-
-- **TMDB API Key**: Paste your API key here (required)
-- **Enable Streaming**: Turn on if you want to stream content
-- **Enable Downloads**: Turn on if you want to download content
-- **Enable Notifications**: Turn on if you want status updates
-
-### Optional integrations
-
-If you use these services, you can connect them:
+### External Service Integration
 
 **Sonarr (for TV shows):**
-- URL: `http://your-sonarr-server:8989`
-- API Key: Found in Sonarr's settings
+- Server URL: `http://your-sonarr-server:8989`
+- API Key: Your Sonarr API key
 
 **Radarr (for movies):**
-- URL: `http://your-radarr-server:7878`
-- API Key: Found in Radarr's settings
+- Server URL: `http://your-radarr-server:7878`
+- API Key: Your Radarr API key
 
-**Streamio (for streaming):**
-- URL: `http://your-streamio-server:port`
-- API Key: Your Streamio API key
+**Prowlarr (for indexer management):**
+- Server URL: `http://your-prowlarr-server:9696`
+- API Key: Your Prowlarr API key
 
-## How to use it
+**BitPlay (for direct streaming):**
+- Server URL: `http://your-bitplay-server:port`
 
-1. Open the JellyScout page in Jellyfin
-2. Search for a movie or TV show
-3. Browse the results - items already in your library will be marked
-4. Click on items to see more details, stream, or download
+### Quality Settings
+- **Minimum Seeders**: Set minimum number of seeders for torrent results
+- **Preferred Quality**: Choose default quality preference (720p, 1080p, 4K)
+- **Max Results**: Maximum number of results to display per search
+
+## Usage
+
+### Content Discovery
+1. Navigate to the **JellyScout** page in your Jellyfin interface
+2. Use the search bar to find movies or TV shows
+3. Apply filters to refine your results
+4. Click on any result to view details and available actions
+
+### Requesting Content
+1. Find the content you want
+2. Click **Request** to add it to your download queue
+3. If configured, the request will be sent to Sonarr/Radarr
+4. Monitor progress through the plugin interface
+
+### Playlists
+- Create custom playlists from search results
+- Export playlists to external services
+- Manage your content collections
+
+## Troubleshooting
+
+### Common Issues
+
+**Plugin not appearing in Jellyfin:**
+- Ensure the plugin is in the correct directory
+- Check Jellyfin logs for loading errors
+- Verify file permissions
+
+**External services not connecting:**
+- Verify server URLs are correct and accessible
+- Check API keys are valid
+- Ensure services are running and accessible from Jellyfin server
+
+**No search results:**
+- Verify Prowlarr integration is working
+- Check if indexers are configured in Prowlarr
+- Review plugin logs for error messages
+
+### Health Checks
+The plugin includes built-in health monitoring:
+- Navigate to **Dashboard > Plugins > JellyScout > Health**
+- View status of all connected services
+- Check detailed error messages and suggestions
 
 ## Development
 
-Want to build it yourself or contribute?
-
+### Building from Source
 ```bash
-git clone https://github.com/enach/jellyfin-plugin-jellyscout.git
+git clone https://github.com/your-username/jellyfin-plugin-jellyscout.git
 cd jellyfin-plugin-jellyscout
-dotnet restore
-dotnet build --configuration Release
+dotnet build
 ```
 
-The built files will be in `bin/Release/net8.0/`.
+### Testing
+```bash
+dotnet test
+```
 
-## Issues and help
+## Contributing
 
-If something isn't working or you have questions:
-
-- Check the [GitHub Issues](https://github.com/enach/jellyfin-plugin-jellyscout/issues) to see if it's a known problem
-- Open a new issue if you found a bug
-- Use [GitHub Discussions](https://github.com/enach/jellyfin-plugin-jellyscout/discussions) for questions
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
 ## License
 
-MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Thanks
+## Support
 
-- [Jellyfin](https://jellyfin.org/) for the great media server
-- [TMDB](https://www.themoviedb.org/) for the movie database
-- [Sonarr](https://sonarr.tv/) and [Radarr](https://radarr.video/) for the download management
+- **GitHub Issues**: [Report bugs or request features](https://github.com/your-username/jellyfin-plugin-jellyscout/issues)
+- **Documentation**: [Wiki](https://github.com/your-username/jellyfin-plugin-jellyscout/wiki)
 
----
+## Changelog
 
-This is a hobby project, so please be patient with updates and fixes. Pull requests are welcome! 
+### v0.1.7 (Latest)
+- Fixed configuration page settings not saving
+- Changed Prowlarr API Key to text field for better UX
+- Simplified configuration system using Jellyfin's built-in form handling
+- Removed unnecessary complexity and custom JavaScript
+- Updated all service integrations for better reliability
+
+### v0.1.5
+- Added comprehensive API integration with Sonarr, Radarr, and Prowlarr
+- Implemented advanced filtering, playlist support, and configuration validation
+- Enhanced error handling and logging
+- Added health check system for monitoring service status
+- Improved caching and performance optimization
+
+### v0.1.0
+- Initial release
+- Basic content discovery functionality
+- Integration with external services
+- Web-based configuration interface 

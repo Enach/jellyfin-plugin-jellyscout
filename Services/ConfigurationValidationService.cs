@@ -49,17 +49,14 @@ public class ConfigurationValidationService
         // Validate TMDB configuration
         await ValidateTmdbConfigurationAsync(config, result);
 
-        // Validate Streamio configuration
-        await ValidateStreamioConfigurationAsync(config.Streamio, result);
-
         // Validate Sonarr configuration
         await ValidateSonarrConfigurationAsync(config.Sonarr, result);
 
         // Validate Radarr configuration
         await ValidateRadarrConfigurationAsync(config.Radarr, result);
 
-        // Validate general settings
-        ValidateGeneralSettings(config, result);
+        // Validate rate limiting settings
+        await ValidateRateLimitingConfigurationAsync(config, result);
 
         result.IsValid = !result.Errors.Any();
         _logger.LogInformation("Configuration validation completed. Valid: {IsValid}, Errors: {ErrorCount}, Warnings: {WarningCount}", 
@@ -122,89 +119,6 @@ public class ConfigurationValidationService
         {
             result.AddError("TMDB.ApiKey", $"Failed to validate TMDB API key: {ex.Message}");
             _logger.LogError(ex, "Error validating TMDB configuration");
-        }
-    }
-
-    /// <summary>
-    /// Validates Streamio configuration.
-    /// </summary>
-    /// <param name="config">The Streamio configuration.</param>
-    /// <param name="result">The validation result.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    private async Task ValidateStreamioConfigurationAsync(StreamioConfiguration config, ConfigurationValidationResult result)
-    {
-        if (config == null)
-        {
-            result.AddWarning("Streamio", "Streamio configuration is not set");
-            return;
-        }
-
-        // Validate server URL
-        if (string.IsNullOrWhiteSpace(config.ServerUrl))
-        {
-            result.AddError("Streamio.ServerUrl", "Streamio server URL is required");
-        }
-        else if (!IsValidUrl(config.ServerUrl))
-        {
-            result.AddError("Streamio.ServerUrl", "Streamio server URL is not a valid URL");
-        }
-        else
-        {
-            // Test connectivity
-            try
-            {
-                var cacheKey = $"streamio_validation_{config.ServerUrl.GetHashCode()}";
-                var cachedResult = _cacheService.Get<object>(cacheKey);
-                bool isValid;
-                
-                if (cachedResult == null)
-                {
-                    var request = new HttpRequestMessage(HttpMethod.Get, $"{config.ServerUrl.TrimEnd('/')}/api/health");
-                    if (!string.IsNullOrEmpty(config.ApiKey))
-                    {
-                        request.Headers.Add("X-API-Key", config.ApiKey);
-                    }
-                    
-                    var response = await _httpClient.SendAsync(request);
-                    isValid = response.IsSuccessStatusCode;
-                    
-                    _cacheService.Set(cacheKey, isValid, TimeSpan.FromMinutes(15));
-                }
-                else
-                {
-                    isValid = (bool)cachedResult;
-                }
-
-                if (isValid)
-                {
-                    result.AddSuccess("Streamio.ServerUrl", "Streamio server is accessible");
-                }
-                else
-                {
-                    result.AddError("Streamio.ServerUrl", "Streamio server is not accessible");
-                }
-            }
-            catch (Exception ex)
-            {
-                result.AddError("Streamio.ServerUrl", $"Failed to connect to Streamio server: {ex.Message}");
-                _logger.LogError(ex, "Error validating Streamio configuration");
-            }
-        }
-
-        // Validate API key
-        if (string.IsNullOrWhiteSpace(config.ApiKey))
-        {
-            result.AddWarning("Streamio.ApiKey", "Streamio API key is recommended for authentication");
-        }
-
-        // Validate timeout
-        if (config.TimeoutSeconds <= 0)
-        {
-            result.AddError("Streamio.TimeoutSeconds", "Streamio timeout must be greater than 0");
-        }
-        else if (config.TimeoutSeconds > 300)
-        {
-            result.AddWarning("Streamio.TimeoutSeconds", "Streamio timeout is very high (>5 minutes)");
         }
     }
 
@@ -301,11 +215,12 @@ public class ConfigurationValidationService
     }
 
     /// <summary>
-    /// Validates general plugin settings.
+    /// Validates rate limiting settings.
     /// </summary>
     /// <param name="config">The plugin configuration.</param>
     /// <param name="result">The validation result.</param>
-    private void ValidateGeneralSettings(PluginConfiguration config, ConfigurationValidationResult result)
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task ValidateRateLimitingConfigurationAsync(PluginConfiguration config, ConfigurationValidationResult result)
     {
         // Validate cache settings
         if (config.CacheExpirationMinutes <= 0)
@@ -332,6 +247,8 @@ public class ConfigurationValidationService
         {
             result.AddError("RequestsPerSecond", "Requests per second must be greater than 0 when rate limiting is enabled");
         }
+
+        await Task.CompletedTask;
     }
 
     /// <summary>

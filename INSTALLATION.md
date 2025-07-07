@@ -131,11 +131,6 @@ docker restart jellyfin
 
 ### 3. Configure External Services (Optional)
 
-**Streamio Integration:**
-- Server URL: `http://your-streamio-server:port`
-- API Key: Your Streamio API key
-- Timeout: 30 seconds (default)
-
 **Sonarr Integration (TV Shows):**
 - Server URL: `http://your-sonarr-server:8989`
 - API Key: Your Sonarr API key

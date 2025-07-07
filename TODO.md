@@ -18,7 +18,7 @@
 
 ### 3. Test External API Integrations
 - [ ] Test TMDB API integration with a real API key
-- [ ] Test Streamio API integration (if available)
+- [x] Test Prowlarr API integration
 - [ ] Test Sonarr API integration (if available)
 - [ ] Test Radarr API integration (if available)
 - [ ] Update configuration examples with real endpoints
@@ -112,7 +112,7 @@ git push -u origin main
 ### ✅ Completed
 - [x] Full plugin implementation with all features
 - [x] Comprehensive API endpoints
-- [x] External service integrations (Streamio, Sonarr, Radarr)
+- [x] External service integrations (Sonarr, Radarr, Prowlarr, BitPlay)
 - [x] Advanced features (filtering, playlists, validation)
 - [x] Professional error handling and logging
 - [x] Build script and GitHub Actions workflow
