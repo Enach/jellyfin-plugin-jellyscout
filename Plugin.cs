@@ -56,7 +56,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
         {
             new PluginPageInfo
             {
-                Name = "JellyScout",
+                Name = "JellyScoutCatalog",
                 EmbeddedResourcePath = string.Format(
                     "{0}.Web.CatalogPage.html",
                     GetType().Namespace),
@@ -66,7 +66,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
             },
             new PluginPageInfo
             {
-                Name = "JellyScoutConfiguration",
+                Name = "JellyScout",
                 EmbeddedResourcePath = string.Format(
                     "{0}.Web.ConfigurationPage.html",
                     GetType().Namespace),

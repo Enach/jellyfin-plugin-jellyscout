@@ -9,7 +9,7 @@ echo "🔨 Building JellyScout Plugin..."
 
 # Configuration
 PROJECT_NAME="Jellyfin.Plugin.JellyScout"
-VERSION="0.0.6"
+VERSION="0.0.7"
 BUILD_DIR="bin/Release/net8.0"
 DIST_DIR="dist"
 PACKAGE_NAME="JellyScout-v${VERSION}"
