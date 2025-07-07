@@ -9,6 +9,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "0.1.8.0",
+        "changelog": "🔧 Critical Configuration Fix:\n\n• Fixed configuration page not saving settings properly\n• Added proper JavaScript for loading and saving configuration\n• Form now loads current settings when opened\n• Settings are properly saved without page clearing\n• Added success/error messages for save operations\n• Fixed form submission handling\n\nThis version finally fixes the configuration page issue where settings were cleared instead of saved.",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.1.8/JellyScout-v0.1.8.zip",
+        "checksum": "4c515f171c4be1ce3f0011b5ecd6e6f4",
+        "timestamp": "2024-12-20T16:30:00Z"
+      },
+      {
         "version": "0.1.7.0",
         "changelog": "🔧 Configuration Page Fixes:\n\n• Fixed configuration page settings not saving properly\n• Fixed sidebar navigation link not working\n• Added proper Jellyfin page structure to index.html\n• Settings now save without page refresh\n\n🧹 Streamio Cleanup:\n• Removed all Streamio references from codebase\n• Focus now on Sonarr, Radarr, Prowlarr, and BitPlay only\n• Cleaner, more focused plugin architecture\n\nThis version addresses critical issues with the plugin settings page and sidebar navigation that prevented proper usage.",
         "targetAbi": "10.8.0.0",

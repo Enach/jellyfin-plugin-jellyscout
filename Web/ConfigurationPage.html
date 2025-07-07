@@ -131,5 +131,85 @@
             </div>
         </div>
     </div>
+
+    <script type="text/javascript">
+        function loadPage() {
+            Dashboard.showLoadingMsg();
+            
+            // Load plugin configuration
+            ApiClient.getPluginConfiguration(JellyScoutConfigurationPage.pluginId).then(function(config) {
+                
+                // Load form values
+                document.getElementById('EnableStreaming').checked = config.EnableStreaming || false;
+                document.getElementById('EnableDownloads').checked = config.EnableDownloads || false;
+                document.getElementById('TmdbApiKey').value = config.TmdbApiKey || '';
+                document.getElementById('MaxSearchResults').value = config.MaxSearchResults || 50;
+                document.getElementById('DefaultQuality').value = config.DefaultQuality || '1080p';
+                document.getElementById('SonarrServerUrl').value = config.SonarrServerUrl || '';
+                document.getElementById('SonarrApiKey').value = config.SonarrApiKey || '';
+                document.getElementById('RadarrServerUrl').value = config.RadarrServerUrl || '';
+                document.getElementById('RadarrApiKey').value = config.RadarrApiKey || '';
+                document.getElementById('ProwlarrServerUrl').value = config.ProwlarrServerUrl || '';
+                document.getElementById('ProwlarrApiKey').value = config.ProwlarrApiKey || '';
+                document.getElementById('MinSeeders').value = config.MinSeeders || 10;
+                document.getElementById('BitPlayServerUrl').value = config.BitPlayServerUrl || 'http://localhost:3347';
+                document.getElementById('EnableNotifications').checked = config.EnableNotifications || false;
+                
+                Dashboard.hideLoadingMsg();
+            }).catch(function(error) {
+                console.error('Error loading configuration:', error);
+                Dashboard.hideLoadingMsg();
+            });
+        }
+
+        function saveConfiguration() {
+            Dashboard.showLoadingMsg();
+            
+            // Get form values
+            var config = {
+                EnableStreaming: document.getElementById('EnableStreaming').checked,
+                EnableDownloads: document.getElementById('EnableDownloads').checked,
+                TmdbApiKey: document.getElementById('TmdbApiKey').value,
+                MaxSearchResults: parseInt(document.getElementById('MaxSearchResults').value) || 50,
+                DefaultQuality: document.getElementById('DefaultQuality').value,
+                SonarrServerUrl: document.getElementById('SonarrServerUrl').value,
+                SonarrApiKey: document.getElementById('SonarrApiKey').value,
+                RadarrServerUrl: document.getElementById('RadarrServerUrl').value,
+                RadarrApiKey: document.getElementById('RadarrApiKey').value,
+                ProwlarrServerUrl: document.getElementById('ProwlarrServerUrl').value,
+                ProwlarrApiKey: document.getElementById('ProwlarrApiKey').value,
+                MinSeeders: parseInt(document.getElementById('MinSeeders').value) || 10,
+                BitPlayServerUrl: document.getElementById('BitPlayServerUrl').value,
+                EnableNotifications: document.getElementById('EnableNotifications').checked
+            };
+            
+            // Save configuration
+            ApiClient.updatePluginConfiguration(JellyScoutConfigurationPage.pluginId, config).then(function() {
+                Dashboard.hideLoadingMsg();
+                Dashboard.alert('Settings saved successfully!');
+            }).catch(function(error) {
+                console.error('Error saving configuration:', error);
+                Dashboard.hideLoadingMsg();
+                Dashboard.alert('Error saving settings. Please try again.');
+            });
+        }
+
+        // Configuration page object
+        window.JellyScoutConfigurationPage = {
+            pluginId: 'a8b4d8c6-3f2a-4d7e-9b1c-5e8f2a9d3c7b'
+        };
+
+        // Handle form submission
+        document.getElementById('jellyscoutConfigForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveConfiguration();
+            return false;
+        });
+
+        // Load page when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPage();
+        });
+    </script>
 </body>
 </html> 
