@@ -13,7 +13,7 @@
         "changelog": "Complete rewrite with modern architecture, API integration, and enhanced features. Added comprehensive API integration with Streamio, Sonarr, and Radarr. Implemented advanced filtering, playlist support, and configuration validation.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.0.2/JellyScout-v0.0.2.zip",
-        "checksum": "9cccd5cf70ae98edc2f5e4b8281b55ba99fc6ccb38e7eb6bf630680a533cbf21",
+        "checksum": "5e46e960aac57105e806983cb7e6e457881907af455e3ba238b927260be23ffa",
         "timestamp": "2024-12-19T12:00:00Z"
       },
       {
