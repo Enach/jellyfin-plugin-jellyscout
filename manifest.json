@@ -10,11 +10,11 @@
     "versions": [
       {
         "version": "0.1.7.0",
-        "changelog": "🔧 Configuration Page Fixes:\n\n• Fixed configuration page save button not working properly\n• Changed form to use Jellyfin's built-in configuration system\n• Changed Prowlarr API Key from password field to text field for better UX\n• Improved form structure with proper submit handling\n• Enhanced configuration loading and saving reliability\n• Fixed page refresh issues when saving settings\n• Better error handling for configuration operations\n\nThis version addresses critical issues with the plugin settings page that prevented users from saving their configuration properly.",
+        "changelog": "🔧 Configuration Page Fixes:\n\n• Fixed configuration page settings not saving properly\n• Fixed sidebar navigation link not working\n• Added proper Jellyfin page structure to index.html\n• Settings now save without page refresh\n\n🧹 Streamio Cleanup:\n• Removed all Streamio references from codebase\n• Focus now on Sonarr, Radarr, Prowlarr, and BitPlay only\n• Cleaner, more focused plugin architecture\n\nThis version addresses critical issues with the plugin settings page and sidebar navigation that prevented proper usage.",
         "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.1.7/jellyscout-0.1.7.0.zip",
-        "checksum": "e3baa589bf11a5c2f9ce9aae95bdf67c",
-        "timestamp": "2024-12-20T15:30:00Z"
+        "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.1.7/JellyScout-v0.1.7.zip",
+        "checksum": "f7f3e1998688fb4faccd7b948efe1897",
+        "timestamp": "2024-12-20T16:00:00Z"
       },
       {
         "version": "0.1.6.0",
