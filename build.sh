@@ -34,14 +34,13 @@ mkdir -p ${DIST_DIR}/${PACKAGE_NAME}
 echo "📋 Copying files..."
 cp ${BUILD_DIR}/*.dll ${DIST_DIR}/${PACKAGE_NAME}/
 cp ${BUILD_DIR}/*.pdb ${DIST_DIR}/${PACKAGE_NAME}/
-cp manifest.json ${DIST_DIR}/${PACKAGE_NAME}/
 cp icon.png ${DIST_DIR}/${PACKAGE_NAME}/
 
-# Create zip package
+# Create zip package with flat structure
 echo "🗜️  Creating zip package..."
-cd ${DIST_DIR}
-zip -r ${PACKAGE_NAME}.zip ${PACKAGE_NAME}/
-cd ..
+cd ${DIST_DIR}/${PACKAGE_NAME}
+zip -r ../${PACKAGE_NAME}.zip .
+cd ../..
 
 # Create checksums
 echo "🔐 Creating checksums..."

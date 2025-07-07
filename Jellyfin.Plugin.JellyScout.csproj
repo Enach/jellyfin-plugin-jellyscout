@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Web\**" />
+    <EmbeddedResource Include="icon.png" />
   </ItemGroup>
 
 </Project>

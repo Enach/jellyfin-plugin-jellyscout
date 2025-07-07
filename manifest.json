@@ -13,7 +13,7 @@
         "changelog": "Enhanced TMDB API integration with dynamic image configuration, trending/popular content support, language/region localization, improved error handling, and real-time download status tracking. Added new API endpoints for trending and popular content discovery.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.0.6/JellyScout-v0.0.6.zip",
-        "checksum": "5f5eddbcad9a9067d14d4a4389d54ef7",
+        "checksum": "227f8a3c565a063e3a7f3e087b9cbc21",
         "timestamp": "2024-12-19T20:00:00Z"
       },
       {
