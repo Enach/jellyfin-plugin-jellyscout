@@ -9,6 +9,14 @@
     "category": "Streaming",
     "versions": [
       {
+        "version": "0.0.5",
+        "changelog": "Fixed version display issue (was showing 0.0.0.0) and included plugin icon. Plugin should now show correct version number and display icon properly.",
+        "targetAbi": "10.9.0.0",
+        "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.0.5/JellyScout-v0.0.5.zip",
+        "checksum": "f9b66dbe2e6707d0f690a94a8c6a913f",
+        "timestamp": "2025-07-07T19:12:00Z"
+      },
+      {
         "version": "0.0.4",
         "changelog": "Fixed configuration page naming issue. Settings should now open the correct configuration page instead of redirecting to catalog.",
         "targetAbi": "10.9.0.0",

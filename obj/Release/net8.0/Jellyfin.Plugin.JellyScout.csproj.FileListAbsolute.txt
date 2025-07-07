@@ -3,6 +3,8 @@
 /Users/nicolashochart/Perso/jellyfin-plugin-jellyscout/bin/Release/net8.0/Jellyfin.Plugin.JellyScout.pdb
 /Users/nicolashochart/Perso/jellyfin-plugin-jellyscout/obj/Release/net8.0/Jellyfin.Plugin.JellyScout.csproj.AssemblyReference.cache
 /Users/nicolashochart/Perso/jellyfin-plugin-jellyscout/obj/Release/net8.0/Jellyfin.Plugin.JellyScout.GeneratedMSBuildEditorConfig.editorconfig
+/Users/nicolashochart/Perso/jellyfin-plugin-jellyscout/obj/Release/net8.0/Jellyfin.Plugin.JellyScout.AssemblyInfoInputs.cache
+/Users/nicolashochart/Perso/jellyfin-plugin-jellyscout/obj/Release/net8.0/Jellyfin.Plugin.JellyScout.AssemblyInfo.cs
 /Users/nicolashochart/Perso/jellyfin-plugin-jellyscout/obj/Release/net8.0/Jellyfin.Plugin.JellyScout.csproj.CoreCompileInputs.cache
 /Users/nicolashochart/Perso/jellyfin-plugin-jellyscout/obj/Release/net8.0/Jellyfin.Plugin.JellyScout.sourcelink.json
 /Users/nicolashochart/Perso/jellyfin-plugin-jellyscout/obj/Release/net8.0/Jellyfin.Plugin.JellyScout.dll
