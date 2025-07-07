@@ -99,22 +99,22 @@ public class PluginConfiguration : BasePluginConfiguration
 }
 
 /// <summary>
-/// Configuration for Streamio integration.
+/// Configuration for torrent streaming integration.
 /// </summary>
 public class StreamioConfiguration
 {
     /// <summary>
-    /// Gets or sets a value indicating whether Streamio is enabled.
+    /// Gets or sets a value indicating whether torrent streaming is enabled.
     /// </summary>
-    public bool Enabled { get; set; } = true;
+    public bool Enabled { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets the Streamio server URL.
+    /// Gets or sets the WebTorrent/streaming server URL (if using external service).
     /// </summary>
-    public string ServerUrl { get; set; } = "http://localhost:11470";
+    public string ServerUrl { get; set; } = "http://localhost:3000";
 
     /// <summary>
-    /// Gets or sets the Streamio API key.
+    /// Gets or sets the API key for streaming service.
     /// </summary>
     public string ApiKey { get; set; } = string.Empty;
 
@@ -127,6 +127,26 @@ public class StreamioConfiguration
     /// Gets or sets a value indicating whether to use HTTPS.
     /// </summary>
     public bool UseHttps { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets the torrent client type (qbittorrent, transmission, webtorrent).
+    /// </summary>
+    public string ClientType { get; set; } = "qbittorrent";
+
+    /// <summary>
+    /// Gets or sets the torrent client web UI URL.
+    /// </summary>
+    public string TorrentClientUrl { get; set; } = "http://localhost:8080";
+
+    /// <summary>
+    /// Gets or sets the torrent client username.
+    /// </summary>
+    public string TorrentClientUsername { get; set; } = "admin";
+
+    /// <summary>
+    /// Gets or sets the torrent client password.
+    /// </summary>
+    public string TorrentClientPassword { get; set; } = string.Empty;
 }
 
 /// <summary>

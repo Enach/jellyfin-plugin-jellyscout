@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.JellyScout.Configuration;
+using Jellyfin.Plugin.JellyScout.Models;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -41,50 +42,240 @@ public class RadarrService
     }
 
     /// <summary>
-    /// Searches for movie torrents using Radarr.
+    /// Adds a movie to Radarr and searches for it.
     /// </summary>
     /// <param name="title">The movie title.</param>
+    /// <param name="tmdbId">The TMDB ID.</param>
     /// <param name="year">The release year.</param>
-    /// <param name="quality">The preferred quality.</param>
-    /// <returns>A collection of torrent results.</returns>
-    public async Task<IEnumerable<TorrentResult>> SearchMovieTorrentsAsync(
-        string title, 
-        int? year = null, 
-        string quality = "1080p")
+    /// <param name="qualityProfileId">The quality profile ID.</param>
+    /// <returns>True if successfully added.</returns>
+    public async Task<bool> AddMovieAsync(string title, int tmdbId, int? year = null, int? qualityProfileId = null)
     {
         try
         {
             if (_radarrConfig == null || !_radarrConfig.Enabled)
             {
                 _logger.LogWarning("Radarr is not configured or disabled");
-                return Enumerable.Empty<TorrentResult>();
+                return false;
             }
 
-            if (string.IsNullOrWhiteSpace(title))
+            if (string.IsNullOrWhiteSpace(_radarrConfig.ApiKey))
             {
-                _logger.LogWarning("Title is required for Radarr search");
-                return Enumerable.Empty<TorrentResult>();
+                _logger.LogError("Radarr API key is not configured");
+                return false;
             }
 
-            _logger.LogInformation("Searching Radarr for movie: {Title} ({Year})", title, year);
+            _logger.LogInformation("Adding movie to Radarr: {Title} (TMDB: {TmdbId})", title, tmdbId);
 
-            // First, search for the movie
-            var movieId = await FindMovieIdAsync(title, year);
-            if (movieId == null)
+            // First, lookup the movie using Radarr's lookup API
+            var lookupResults = await LookupMovieAsync(title, year, tmdbId);
+            if (!lookupResults.Any())
             {
-                _logger.LogWarning("Could not find movie ID for: {Title} ({Year})", title, year);
-                return Enumerable.Empty<TorrentResult>();
+                _logger.LogError("Could not find movie in Radarr lookup: {Title}", title);
+                return false;
             }
 
-            // Search for releases
-            var releases = await SearchReleasesAsync(movieId.Value, quality);
-            
-            return releases.Select(ConvertToTorrentResult);
+            var selectedMovie = lookupResults.First();
+
+            // Check if movie already exists in Radarr
+            var existingMovie = await GetExistingMovieAsync(selectedMovie.TmdbId);
+            if (existingMovie != null)
+            {
+                _logger.LogInformation("Movie already exists in Radarr: {Title}", title);
+                return true; // Already exists, consider it successful
+            }
+
+            // Get root folders
+            var rootFolders = await GetRootFoldersAsync();
+            var rootFolderPath = rootFolders.FirstOrDefault()?.Path ?? "/movies/";
+
+            // Add movie to Radarr using the lookup result
+            var addMovieRequest = new
+            {
+                title = selectedMovie.Title,
+                titleSlug = selectedMovie.TitleSlug,
+                tmdbId = selectedMovie.TmdbId,
+                year = selectedMovie.Year,
+                qualityProfileId = qualityProfileId ?? _radarrConfig.QualityProfileId,
+                rootFolderPath = rootFolderPath,
+                monitored = true,
+                minimumAvailability = "announced", // or "inCinemas", "released", "preDB"
+                addOptions = new
+                {
+                    searchForMovie = true,
+                    ignoreEpisodesWithFiles = false,
+                    ignoreEpisodesWithoutFiles = false
+                }
+            };
+
+            var jsonContent = JsonConvert.SerializeObject(addMovieRequest);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _radarrConfig.ApiKey);
+
+            var response = await _httpClient.PostAsync($"{_radarrConfig.ServerUrl}/api/v3/movie", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Successfully added movie to Radarr: {Title}", title);
+                return true;
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Radarr API error: {StatusCode} - {Content}", response.StatusCode, errorContent);
+                return false;
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error searching Radarr for movie: {Title} ({Year})", title, year);
-            return Enumerable.Empty<TorrentResult>();
+            _logger.LogError(ex, "Error adding movie to Radarr: {Title}", title);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Gets the download status of a movie by TMDB ID.
+    /// </summary>
+    /// <param name="tmdbId">The TMDB ID.</param>
+    /// <returns>Download status information.</returns>
+    public async Task<DownloadStatus> GetDownloadStatusAsync(int tmdbId)
+    {
+        try
+        {
+            if (_radarrConfig == null || !_radarrConfig.Enabled)
+            {
+                return new DownloadStatus { Status = MediaStatus.NotInSystem, Message = "Radarr not configured" };
+            }
+
+            // First check if movie exists in Radarr
+            var movie = await GetExistingMovieByTmdbIdAsync(tmdbId);
+            if (movie == null)
+            {
+                return new DownloadStatus { Status = MediaStatus.NotInSystem, Message = "Not added to Radarr" };
+            }
+
+            // Check download queue for active downloads
+            var queueItems = await GetQueueAsync();
+            var activeDownload = queueItems.FirstOrDefault(q => q.MovieId == movie.Id);
+
+            if (activeDownload != null)
+            {
+                var downloadProgress = activeDownload.Size > 0 ? (double)activeDownload.SizeLeft / activeDownload.Size * 100 : 0;
+                return new DownloadStatus 
+                { 
+                    Status = MediaStatus.Downloading, 
+                    Message = $"Downloading ({activeDownload.Title})",
+                    Progress = (int)(100 - downloadProgress),
+                    Details = new List<string> { activeDownload.Title }
+                };
+            }
+
+            // Check if movie is downloaded
+            if (movie.HasFile)
+            {
+                return new DownloadStatus 
+                { 
+                    Status = MediaStatus.Downloaded, 
+                    Message = "Downloaded",
+                    Progress = 100
+                };
+            }
+            else if (movie.Monitored)
+            {
+                return new DownloadStatus 
+                { 
+                    Status = MediaStatus.Wanted, 
+                    Message = "Added but not downloaded",
+                    Progress = 0
+                };
+            }
+            else
+            {
+                return new DownloadStatus 
+                { 
+                    Status = MediaStatus.NotMonitored, 
+                    Message = "Added but not monitored",
+                    Progress = 0
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting download status for TMDB ID: {TmdbId}", tmdbId);
+            return new DownloadStatus { Status = MediaStatus.Failed, Message = $"Error: {ex.Message}" };
+        }
+    }
+
+    /// <summary>
+    /// Gets the current download queue from Radarr.
+    /// </summary>
+    /// <returns>List of queue items.</returns>
+    private async Task<IEnumerable<RadarrQueueItem>> GetQueueAsync()
+    {
+        if (_radarrConfig == null)
+        {
+            return Enumerable.Empty<RadarrQueueItem>();
+        }
+
+        try
+        {
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _radarrConfig.ApiKey);
+
+            var response = await _httpClient.GetAsync($"{_radarrConfig.ServerUrl}/api/v3/queue");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var queueResponse = JsonConvert.DeserializeObject<RadarrQueueResponse>(content);
+                return queueResponse?.Records ?? Enumerable.Empty<RadarrQueueItem>();
+            }
+
+            return Enumerable.Empty<RadarrQueueItem>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting Radarr queue");
+            return Enumerable.Empty<RadarrQueueItem>();
+        }
+    }
+
+    /// <summary>
+    /// Gets existing movie by TMDB ID.
+    /// </summary>
+    /// <param name="tmdbId">The TMDB ID.</param>
+    /// <returns>The movie if found.</returns>
+    private async Task<RadarrMovie?> GetExistingMovieByTmdbIdAsync(int tmdbId)
+    {
+        if (_radarrConfig == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _radarrConfig.ApiKey);
+
+            var response = await _httpClient.GetAsync($"{_radarrConfig.ServerUrl}/api/v3/movie");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var allMovies = JsonConvert.DeserializeObject<RadarrMovie[]>(content);
+                
+                // Find movie with matching TMDB ID
+                return allMovies?.FirstOrDefault(m => m.TmdbId == tmdbId);
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting existing movie by TMDB ID: {TmdbId}", tmdbId);
+            return null;
         }
     }
 
@@ -173,6 +364,147 @@ public class RadarrService
         {
             _logger.LogError(ex, "Error getting movie releases for movie ID: {MovieId}", movieId);
             return Enumerable.Empty<TorrentResult>();
+        }
+    }
+
+    /// <summary>
+    /// Searches for movies using Radarr's lookup API.
+    /// </summary>
+    /// <param name="title">The movie title.</param>
+    /// <param name="year">The release year.</param>
+    /// <param name="tmdbId">The TMDB ID.</param>
+    /// <returns>Collection of movie lookup results.</returns>
+    private async Task<IEnumerable<RadarrMovie>> LookupMovieAsync(string title, int? year = null, int? tmdbId = null)
+    {
+        if (_radarrConfig == null)
+        {
+            _logger.LogWarning("Radarr configuration is not set");
+            return Enumerable.Empty<RadarrMovie>();
+        }
+
+        try
+        {
+            var searchUrl = $"{_radarrConfig.ServerUrl}/api/v3/movie/lookup?term={Uri.EscapeDataString(title)}";
+            
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _radarrConfig.ApiKey);
+
+            var response = await _httpClient.GetAsync(searchUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var movies = JsonConvert.DeserializeObject<RadarrMovie[]>(content);
+
+                if (movies != null && movies.Length > 0)
+                {
+                    // Filter by TMDB ID if provided
+                    if (tmdbId.HasValue)
+                    {
+                        var tmdbMatches = movies.Where(m => m.TmdbId == tmdbId.Value).ToArray();
+                        if (tmdbMatches.Length > 0)
+                        {
+                            return tmdbMatches;
+                        }
+                    }
+                    
+                    // Filter by year if provided
+                    if (year.HasValue)
+                    {
+                        var yearMatches = movies.Where(m => m.Year == year.Value).ToArray();
+                        if (yearMatches.Length > 0)
+                        {
+                            return yearMatches;
+                        }
+                    }
+                    
+                    return movies;
+                }
+            }
+
+            return Enumerable.Empty<RadarrMovie>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error looking up movie: {Title}", title);
+            return Enumerable.Empty<RadarrMovie>();
+        }
+    }
+
+    /// <summary>
+    /// Gets existing movie by TMDB ID.
+    /// </summary>
+    /// <param name="tmdbId">The TMDB ID.</param>
+    /// <returns>Existing movie or null.</returns>
+    private async Task<RadarrMovie?> GetExistingMovieAsync(int tmdbId)
+    {
+        if (_radarrConfig == null)
+        {
+            _logger.LogWarning("Radarr configuration is not set");
+            return null;
+        }
+
+        try
+        {
+            var moviesUrl = $"{_radarrConfig.ServerUrl}/api/v3/movie";
+            
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _radarrConfig.ApiKey);
+
+            var response = await _httpClient.GetAsync(moviesUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var movies = JsonConvert.DeserializeObject<RadarrMovie[]>(content);
+
+                return movies?.FirstOrDefault(m => m.TmdbId == tmdbId);
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting existing movie with TMDB ID: {TmdbId}", tmdbId);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Gets root folders from Radarr.
+    /// </summary>
+    /// <returns>Collection of root folders.</returns>
+    private async Task<IEnumerable<RadarrRootFolder>> GetRootFoldersAsync()
+    {
+        if (_radarrConfig == null)
+        {
+            _logger.LogWarning("Radarr configuration is not set");
+            return Enumerable.Empty<RadarrRootFolder>();
+        }
+
+        try
+        {
+            var rootFolderUrl = $"{_radarrConfig.ServerUrl}/api/v3/rootfolder";
+            
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _radarrConfig.ApiKey);
+
+            var response = await _httpClient.GetAsync(rootFolderUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var rootFolders = JsonConvert.DeserializeObject<RadarrRootFolder[]>(content);
+
+                return rootFolders ?? Enumerable.Empty<RadarrRootFolder>();
+            }
+
+            return Enumerable.Empty<RadarrRootFolder>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting root folders from Radarr");
+            return Enumerable.Empty<RadarrRootFolder>();
         }
     }
 
@@ -394,66 +726,6 @@ public class RadarrService
             _ => 50
         };
     }
-}
-
-/// <summary>
-/// Represents a Radarr movie.
-/// </summary>
-public class RadarrMovie
-{
-    /// <summary>
-    /// Gets or sets the movie ID.
-    /// </summary>
-    [JsonProperty("id")]
-    public int Id { get; set; }
-
-    /// <summary>
-    /// Gets or sets the title.
-    /// </summary>
-    [JsonProperty("title")]
-    public string Title { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the year.
-    /// </summary>
-    [JsonProperty("year")]
-    public int Year { get; set; }
-
-    /// <summary>
-    /// Gets or sets the TMDB ID.
-    /// </summary>
-    [JsonProperty("tmdbId")]
-    public int TmdbId { get; set; }
-
-    /// <summary>
-    /// Gets or sets the title slug.
-    /// </summary>
-    [JsonProperty("titleSlug")]
-    public string TitleSlug { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the images.
-    /// </summary>
-    [JsonProperty("images")]
-    public RadarrImage[]? Images { get; set; }
-}
-
-/// <summary>
-/// Represents a Radarr image.
-/// </summary>
-public class RadarrImage
-{
-    /// <summary>
-    /// Gets or sets the cover type.
-    /// </summary>
-    [JsonProperty("coverType")]
-    public string CoverType { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the URL.
-    /// </summary>
-    [JsonProperty("url")]
-    public string Url { get; set; } = string.Empty;
 }
 
 /// <summary>

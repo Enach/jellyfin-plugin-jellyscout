@@ -82,9 +82,9 @@ public class ConfigurationValidationService
             return;
         }
 
-        if (config.TmdbApiKey.Length != 32)
+        if (config.TmdbApiKey.Length < 20 || config.TmdbApiKey.Length > 50)
         {
-            result.AddWarning("TMDB.ApiKey", "TMDB API key should be 32 characters long");
+            result.AddWarning("TMDB.ApiKey", "TMDB API key format appears invalid (should be 20-50 characters)");
         }
 
         // Test TMDB API connectivity

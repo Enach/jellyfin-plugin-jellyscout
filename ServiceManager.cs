@@ -99,7 +99,19 @@ public static class ServiceManager
     /// <returns>The Sonarr service.</returns>
     public static SonarrService GetSonarrService(ILoggerFactory loggerFactory)
     {
-        return _sonarrService ??= new SonarrService(_httpClient, loggerFactory.CreateLogger<SonarrService>());
+        if (_sonarrService == null)
+        {
+            _sonarrService = new SonarrService(_httpClient, loggerFactory.CreateLogger<SonarrService>());
+            
+            // Configure with current plugin settings
+            var config = Plugin.Instance?.Configuration?.SonarrConfig;
+            if (config != null)
+            {
+                _sonarrService.SetSonarrConfiguration(config);
+            }
+        }
+        
+        return _sonarrService;
     }
 
     /// <summary>
@@ -109,7 +121,19 @@ public static class ServiceManager
     /// <returns>The Radarr service.</returns>
     public static RadarrService GetRadarrService(ILoggerFactory loggerFactory)
     {
-        return _radarrService ??= new RadarrService(_httpClient, loggerFactory.CreateLogger<RadarrService>());
+        if (_radarrService == null)
+        {
+            _radarrService = new RadarrService(_httpClient, loggerFactory.CreateLogger<RadarrService>());
+            
+            // Configure with current plugin settings
+            var config = Plugin.Instance?.Configuration?.RadarrConfig;
+            if (config != null)
+            {
+                _radarrService.SetRadarrConfiguration(config);
+            }
+        }
+        
+        return _radarrService;
     }
 
     /// <summary>

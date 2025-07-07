@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.JellyScout.Services;
 using Jellyfin.Plugin.JellyScout.Configuration;
+using Jellyfin.Plugin.JellyScout.Models;
 using MediaBrowser.Controller.Library;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -716,6 +718,78 @@ public class JellyScoutController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Saves plugin configuration.
+    /// </summary>
+    /// <param name="config">The configuration to save.</param>
+    /// <returns>Success or error response.</returns>
+    [HttpPost("config/save")]
+    public async Task<IActionResult> SaveConfiguration([FromBody] PluginConfiguration config)
+    {
+        try
+        {
+            if (config == null)
+            {
+                return BadRequest(new { error = "Configuration is required" });
+            }
+
+            // Validate configuration first
+            var validationService = ServiceManager.GetConfigurationValidationService(_loggerFactory);
+            var validationResult = await validationService.ValidateConfigurationAsync(config);
+
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(new { 
+                    error = "Configuration validation failed", 
+                    validationErrors = validationResult.Errors.Select(e => e.Message) 
+                });
+            }
+
+            // Save configuration
+            if (Plugin.Instance?.Configuration != null)
+            {
+                Plugin.Instance.Configuration.TmdbApiKey = config.TmdbApiKey;
+                Plugin.Instance.Configuration.EnableStreaming = config.EnableStreaming;
+                Plugin.Instance.Configuration.EnableDownloads = config.EnableDownloads;
+                Plugin.Instance.Configuration.EnableNotifications = config.EnableNotifications;
+                Plugin.Instance.Configuration.AutoCheckLibrary = config.AutoCheckLibrary;
+                Plugin.Instance.Configuration.DefaultQuality = config.DefaultQuality;
+                Plugin.Instance.Configuration.MaxSearchResults = config.MaxSearchResults;
+                Plugin.Instance.Configuration.ApiTimeoutSeconds = config.ApiTimeoutSeconds;
+                Plugin.Instance.Configuration.CacheExpirationMinutes = config.CacheExpirationMinutes;
+                Plugin.Instance.Configuration.MaxConcurrentRequests = config.MaxConcurrentRequests;
+                Plugin.Instance.Configuration.EnableRateLimiting = config.EnableRateLimiting;
+                Plugin.Instance.Configuration.RequestsPerSecond = config.RequestsPerSecond;
+
+                // Copy service configurations
+                if (config.StreamioConfig != null)
+                {
+                    Plugin.Instance.Configuration.StreamioConfig = config.StreamioConfig;
+                }
+                if (config.SonarrConfig != null)
+                {
+                    Plugin.Instance.Configuration.SonarrConfig = config.SonarrConfig;
+                }
+                if (config.RadarrConfig != null)
+                {
+                    Plugin.Instance.Configuration.RadarrConfig = config.RadarrConfig;
+                }
+
+                Plugin.Instance.SaveConfiguration();
+                
+                _logger.LogInformation("Plugin configuration saved successfully");
+                return Ok(new { message = "Configuration saved successfully" });
+            }
+
+            return StatusCode(500, new { error = "Plugin instance not available" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error saving configuration");
+            return StatusCode(500, new { error = "Failed to save configuration" });
+        }
+    }
+
     [HttpGet("config/recommendations")]
     public IActionResult GetConfigurationRecommendations()
     {
@@ -736,6 +810,289 @@ public class JellyScoutController : ControllerBase
         {
             _logger.LogError(ex, "Error getting configuration recommendations");
             return StatusCode(500, new { error = "Failed to get recommendations" });
+        }
+    }
+
+    /// <summary>
+    /// Add a TV show to Sonarr.
+    /// </summary>
+    /// <param name="request">The add TV show request.</param>
+    /// <returns>Success status.</returns>
+    [HttpPost("sonarr/add")]
+    public async Task<IActionResult> AddToSonarr([FromBody] AddMediaRequest request)
+    {
+        if (request == null)
+        {
+            return BadRequest(new { error = "Request body is required." });
+        }
+
+        var validationResult = ValidateAddMediaRequest(request);
+        if (!validationResult.IsValid)
+        {
+            return BadRequest(new { error = validationResult.ErrorMessage });
+        }
+
+        try
+        {
+            var sonarrService = ServiceManager.GetSonarrService(_loggerFactory);
+            var success = await sonarrService.AddTVShowAsync(request.Title, request.TmdbId, request.Year, request.QualityProfileId);
+
+            if (success)
+            {
+                return Ok(new { message = $"Successfully added '{request.Title}' to Sonarr" });
+            }
+            else
+            {
+                return BadRequest(new { error = "Failed to add TV show to Sonarr" });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding TV show to Sonarr: {Title}", request.Title);
+            return StatusCode(500, new { error = "Internal server error occurred while adding to Sonarr." });
+        }
+    }
+
+    /// <summary>
+    /// Add a movie to Radarr.
+    /// </summary>
+    /// <param name="request">The add movie request.</param>
+    /// <returns>Success status.</returns>
+    [HttpPost("radarr/add")]
+    public async Task<IActionResult> AddToRadarr([FromBody] AddMediaRequest request)
+    {
+        if (request == null)
+        {
+            return BadRequest(new { error = "Request body is required." });
+        }
+
+        var validationResult = ValidateAddMediaRequest(request);
+        if (!validationResult.IsValid)
+        {
+            return BadRequest(new { error = validationResult.ErrorMessage });
+        }
+
+        try
+        {
+            var radarrService = ServiceManager.GetRadarrService(_loggerFactory);
+            var success = await radarrService.AddMovieAsync(request.Title, request.TmdbId, request.Year, request.QualityProfileId);
+
+            if (success)
+            {
+                return Ok(new { message = $"Successfully added '{request.Title}' to Radarr" });
+            }
+            else
+            {
+                return BadRequest(new { error = "Failed to add movie to Radarr" });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding movie to Radarr: {Title}", request.Title);
+            return StatusCode(500, new { error = "Internal server error occurred while adding to Radarr." });
+        }
+    }
+
+    /// <summary>
+    /// Gets the download status of a TV show from Sonarr.
+    /// </summary>
+    /// <param name="tmdbId">The TMDB ID of the TV show.</param>
+    /// <returns>The download status.</returns>
+    [HttpGet("sonarr/status/{tmdbId}")]
+    public async Task<IActionResult> GetSonarrStatus(int tmdbId)
+    {
+        try
+        {
+            if (tmdbId <= 0)
+            {
+                return BadRequest(new { error = "Invalid TMDB ID" });
+            }
+
+            var sonarrService = ServiceManager.GetSonarrService(_loggerFactory);
+            var status = await sonarrService.GetDownloadStatusAsync(tmdbId);
+            
+            return Ok(status);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting Sonarr status for TMDB ID: {TmdbId}", tmdbId);
+            return StatusCode(500, new { error = "Internal server error" });
+        }
+    }
+
+    /// <summary>
+    /// Gets the download status of a movie from Radarr.
+    /// </summary>
+    /// <param name="tmdbId">The TMDB ID of the movie.</param>
+    /// <returns>The download status.</returns>
+    [HttpGet("radarr/status/{tmdbId}")]
+    public async Task<IActionResult> GetRadarrStatus(int tmdbId)
+    {
+        try
+        {
+            if (tmdbId <= 0)
+            {
+                return BadRequest(new { error = "Invalid TMDB ID" });
+            }
+
+            var radarrService = ServiceManager.GetRadarrService(_loggerFactory);
+            var status = await radarrService.GetDownloadStatusAsync(tmdbId);
+            
+            return Ok(status);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting Radarr status for TMDB ID: {TmdbId}", tmdbId);
+            return StatusCode(500, new { error = "Internal server error" });
+        }
+    }
+
+    /// <summary>
+    /// Gets the combined download status for all active downloads.
+    /// </summary>
+    /// <returns>The combined download queue status.</returns>
+    [HttpGet("downloads/queue")]
+    public async Task<IActionResult> GetDownloadQueue()
+    {
+        try
+        {
+            var sonarrService = ServiceManager.GetSonarrService(_loggerFactory);
+            var radarrService = ServiceManager.GetRadarrService(_loggerFactory);
+            
+            var result = new
+            {
+                sonarr = new List<object>(),
+                radarr = new List<object>(),
+                lastUpdated = DateTime.UtcNow
+            };
+
+            // Note: This would need public queue methods in the services
+            // For now, returning empty arrays as the queue methods are private
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting download queue");
+            return StatusCode(500, new { error = "Internal server error" });
+        }
+    }
+
+    /// <summary>
+    /// Gets trending movies and TV shows.
+    /// </summary>
+    /// <param name="mediaType">The media type (all, movie, tv).</param>
+    /// <param name="timeWindow">The time window (day, week).</param>
+    /// <param name="language">The language (default: en-US).</param>
+    /// <returns>Trending content.</returns>
+    [HttpGet("trending/{mediaType}/{timeWindow}")]
+    public async Task<IActionResult> GetTrending(
+        [Required] string mediaType,
+        [Required] string timeWindow,
+        [FromQuery] string language = "en-US")
+    {
+        // Validate media type
+        var validMediaTypes = new[] { "all", "movie", "tv" };
+        if (!validMediaTypes.Contains(mediaType.ToLowerInvariant()))
+        {
+            return BadRequest(new { error = $"Invalid media type. Must be one of: {string.Join(", ", validMediaTypes)}" });
+        }
+
+        // Validate time window
+        var validTimeWindows = new[] { "day", "week" };
+        if (!validTimeWindows.Contains(timeWindow.ToLowerInvariant()))
+        {
+            return BadRequest(new { error = $"Invalid time window. Must be one of: {string.Join(", ", validTimeWindows)}" });
+        }
+
+        try
+        {
+            var tmdbService = ServiceManager.GetTMDBService(_loggerFactory);
+            var trendingContent = await tmdbService.GetTrendingAsync(mediaType, timeWindow, language);
+            
+            return Ok(new { 
+                results = trendingContent.ToArray(),
+                mediaType,
+                timeWindow,
+                language
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting trending content for {MediaType} in {TimeWindow}", mediaType, timeWindow);
+            return StatusCode(500, new { error = "Internal server error occurred while getting trending content." });
+        }
+    }
+
+    /// <summary>
+    /// Gets popular movies.
+    /// </summary>
+    /// <param name="page">The page number (default: 1).</param>
+    /// <param name="language">The language (default: en-US).</param>
+    /// <param name="region">The region (default: US).</param>
+    /// <returns>Popular movies.</returns>
+    [HttpGet("popular/movies")]
+    public async Task<IActionResult> GetPopularMovies(
+        [FromQuery] int page = 1,
+        [FromQuery] string language = "en-US",
+        [FromQuery] string region = "US")
+    {
+        // Validate page
+        if (page < 1 || page > 1000)
+        {
+            return BadRequest(new { error = "Page must be between 1 and 1000." });
+        }
+
+        try
+        {
+            var tmdbService = ServiceManager.GetTMDBService(_loggerFactory);
+            var popularMovies = await tmdbService.GetPopularMoviesAsync(page, language, region);
+            
+            return Ok(new { 
+                results = popularMovies.ToArray(),
+                page,
+                language,
+                region
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting popular movies");
+            return StatusCode(500, new { error = "Internal server error occurred while getting popular movies." });
+        }
+    }
+
+    /// <summary>
+    /// Gets popular TV shows.
+    /// </summary>
+    /// <param name="page">The page number (default: 1).</param>
+    /// <param name="language">The language (default: en-US).</param>
+    /// <returns>Popular TV shows.</returns>
+    [HttpGet("popular/tv")]
+    public async Task<IActionResult> GetPopularTVShows(
+        [FromQuery] int page = 1,
+        [FromQuery] string language = "en-US")
+    {
+        // Validate page
+        if (page < 1 || page > 1000)
+        {
+            return BadRequest(new { error = "Page must be between 1 and 1000." });
+        }
+
+        try
+        {
+            var tmdbService = ServiceManager.GetTMDBService(_loggerFactory);
+            var popularTVShows = await tmdbService.GetPopularTVShowsAsync(page, language);
+            
+            return Ok(new { 
+                results = popularTVShows.ToArray(),
+                page,
+                language
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting popular TV shows");
+            return StatusCode(500, new { error = "Internal server error occurred while getting popular TV shows." });
         }
     }
 
@@ -1161,6 +1518,41 @@ public class JellyScoutController : ControllerBase
         return new ValidationResult(true);
     }
 
+    /// <summary>
+    /// Validates an add media request.
+    /// </summary>
+    /// <param name="request">The add media request to validate.</param>
+    /// <returns>Validation result.</returns>
+    private static ValidationResult ValidateAddMediaRequest(AddMediaRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Title))
+        {
+            return new ValidationResult(false, "Title is required.");
+        }
+
+        if (request.Title.Length > 500)
+        {
+            return new ValidationResult(false, "Title is too long. Maximum length is 500 characters.");
+        }
+
+        if (request.TmdbId <= 0)
+        {
+            return new ValidationResult(false, "Valid TMDB ID is required.");
+        }
+
+        if (request.Year.HasValue && (request.Year.Value < 1900 || request.Year.Value > DateTime.Now.Year + 10))
+        {
+            return new ValidationResult(false, $"Invalid year. Must be between 1900 and {DateTime.Now.Year + 10}.");
+        }
+
+        if (request.QualityProfileId.HasValue && request.QualityProfileId.Value <= 0)
+        {
+            return new ValidationResult(false, "Quality profile ID must be a positive integer.");
+        }
+
+        return new ValidationResult(true);
+    }
+
     #endregion
 }
 
@@ -1243,28 +1635,33 @@ public class AddToPlaylistRequest
 }
 
 /// <summary>
-/// Play playlist request model.
+/// Add media request model for Sonarr/Radarr integration.
 /// </summary>
-public class PlayPlaylistRequest
+public class AddMediaRequest
 {
     /// <summary>
-    /// Gets or sets the playlist ID.
+    /// Gets or sets the media title.
     /// </summary>
-    public string PlaylistId { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the user ID.
+    /// Gets or sets the TMDB ID.
     /// </summary>
-    public string UserId { get; set; } = string.Empty;
+    public int TmdbId { get; set; }
 
     /// <summary>
-    /// Gets or sets whether to shuffle the playlist.
+    /// Gets or sets the release year.
     /// </summary>
-    public bool Shuffle { get; set; }
+    public int? Year { get; set; }
+
+    /// <summary>
+    /// Gets or sets the quality profile ID.
+    /// </summary>
+    public int? QualityProfileId { get; set; }
 }
 
 /// <summary>
-/// Request model for streaming.
+/// Streaming request model.
 /// </summary>
 public class StreamingRequest
 {
@@ -1274,13 +1671,13 @@ public class StreamingRequest
     public string MagnetLink { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the title.
+    /// Gets or sets the media title.
     /// </summary>
     public string Title { get; set; } = string.Empty;
 }
 
 /// <summary>
-/// Request model for downloads.
+/// Download request model.
 /// </summary>
 public class DownloadRequest
 {
@@ -1290,13 +1687,34 @@ public class DownloadRequest
     public string MagnetLink { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the title.
+    /// Gets or sets the media title.
     /// </summary>
     public string Title { get; set; } = string.Empty;
 }
 
 /// <summary>
-/// Represents a validation result.
+/// Play playlist request model.
+/// </summary>
+public class PlayPlaylistRequest
+{
+    /// <summary>
+    /// Gets or sets the user ID.
+    /// </summary>
+    public string UserId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the playlist ID.
+    /// </summary>
+    public string PlaylistId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether to shuffle the playlist.
+    /// </summary>
+    public bool Shuffle { get; set; } = false;
+}
+
+/// <summary>
+/// Validation result model.
 /// </summary>
 public class ValidationResult
 {

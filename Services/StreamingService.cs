@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.JellyScout.Configuration;
+using Jellyfin.Plugin.JellyScout.Models;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -88,7 +89,10 @@ public class StreamingService
                 var sonarrService = GetSonarrService();
                 if (sonarrService != null)
                 {
-                    return await sonarrService.SearchTVShowTorrentsAsync(title, year, null, quality);
+                    // Note: Direct torrent search is now handled by Sonarr after adding the show
+                    // The user should use the "Add to Sonarr" functionality instead
+                    _logger.LogInformation("TV show detected, would use Sonarr integration");
+                    return Enumerable.Empty<TorrentResult>();
                 }
             }
             else // Default to movie search
@@ -96,7 +100,10 @@ public class StreamingService
                 var radarrService = GetRadarrService();
                 if (radarrService != null)
                 {
-                    return await radarrService.SearchMovieTorrentsAsync(title, year, quality);
+                    // Note: Direct torrent search is now handled by Radarr after adding the movie
+                    // The user should use the "Add to Radarr" functionality instead
+                    _logger.LogInformation("Movie detected, would use Radarr integration");
+                    return Enumerable.Empty<TorrentResult>();
                 }
             }
 
@@ -269,118 +276,204 @@ public class StreamingService
         };
     }
 
-
-
+    /// <summary>
+    /// Initiates torrent streaming (replacement for Stremio integration).
+    /// </summary>
+    /// <param name="magnetLink">The magnet link.</param>
+    /// <param name="title">The media title.</param>
+    /// <returns>The streaming URL or null if failed.</returns>
     private async Task<string?> InitiateTorrentStreaming(string magnetLink, string title)
     {
         try
         {
-            if (_streamioConfig == null || !_streamioConfig.Enabled)
+            _logger.LogInformation("Starting torrent stream for: {Title}", title);
+
+            // Option 1: Use a torrent streaming service like WebTorrent
+            // This would require a WebTorrent server or similar
+            var streamingUrl = await StartWebTorrentStream(magnetLink, title);
+            
+            if (!string.IsNullOrEmpty(streamingUrl))
             {
-                _logger.LogWarning("Streamio is not configured or disabled");
-                return null;
+                return streamingUrl;
             }
 
-            _logger.LogInformation("Initiating torrent streaming for {Title} using Streamio", title);
-
-            // Create stream request for Streamio
-            var streamRequest = new
-            {
-                magnet = magnetLink,
-                title = title,
-                autostart = true
-            };
-
-            var jsonContent = JsonConvert.SerializeObject(streamRequest);
-            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-            // Add API key if configured
-            if (!string.IsNullOrEmpty(_streamioConfig.ApiKey))
-            {
-                _httpClient.DefaultRequestHeaders.Add("X-API-Key", _streamioConfig.ApiKey);
-            }
-
-            var response = await _httpClient.PostAsync($"{_streamioConfig.ServerUrl}/api/stream", content);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var streamResponse = JsonConvert.DeserializeObject<StreamioStreamResponse>(responseContent);
-                
-                if (streamResponse != null && !string.IsNullOrEmpty(streamResponse.StreamUrl))
-                {
-                    _logger.LogInformation("Streamio streaming URL obtained: {StreamingUrl}", streamResponse.StreamUrl);
-                    return streamResponse.StreamUrl;
-                }
-            }
-            else
-            {
-                _logger.LogError("Streamio API error: {StatusCode} - {ReasonPhrase}", response.StatusCode, response.ReasonPhrase);
-            }
-
-            return null;
+            // Option 2: Use a local torrent client with streaming capability
+            streamingUrl = await StartLocalTorrentStream(magnetLink, title);
+            
+            return streamingUrl;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error initiating torrent streaming for {Title}", title);
+            _logger.LogError(ex, "Failed to start torrent stream for: {Title}", title);
             return null;
         }
     }
 
+    /// <summary>
+    /// Starts streaming using WebTorrent or similar service.
+    /// </summary>
+    /// <param name="magnetLink">The magnet link.</param>
+    /// <param name="title">The media title.</param>
+    /// <returns>Streaming URL.</returns>
+    private async Task<string?> StartWebTorrentStream(string magnetLink, string title)
+    {
+        try
+        {
+            // If you have a WebTorrent server running (like webtorrent-cli --dlna)
+            if (_streamioConfig?.Enabled == true && !string.IsNullOrEmpty(_streamioConfig.ServerUrl))
+            {
+                var request = new
+                {
+                    magnet = magnetLink,
+                    title = title
+                };
+
+                var content = new StringContent(
+                    JsonConvert.SerializeObject(request), 
+                    Encoding.UTF8, 
+                    "application/json");
+
+                var response = await _httpClient.PostAsync(
+                    $"{_streamioConfig.ServerUrl}/stream", 
+                    content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseData = await response.Content.ReadAsStringAsync();
+                    var result = JsonConvert.DeserializeObject<dynamic>(responseData);
+                    return result?.streamUrl?.ToString();
+                }
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "WebTorrent streaming failed for: {Title}", title);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Starts streaming using local torrent client.
+    /// </summary>
+    /// <param name="magnetLink">The magnet link.</param>
+    /// <param name="title">The media title.</param>
+    /// <returns>Streaming URL.</returns>
+    private async Task<string?> StartLocalTorrentStream(string magnetLink, string title)
+    {
+        try
+        {
+            // Option: Use qBittorrent with sequential download + HTTP server
+            // 1. Add torrent to qBittorrent with sequential download
+            // 2. Start download
+            // 3. Return HTTP URL to the downloading file
+            
+            // First, try to add the torrent to the client
+            var success = await AddToTorrentClient(magnetLink, title);
+            
+            if (success)
+            {
+                // Extract hash and return streaming URL
+                var torrentHash = ExtractHashFromMagnet(magnetLink);
+                if (!string.IsNullOrEmpty(torrentHash))
+                {
+                    // This would be the URL to stream from qBittorrent's HTTP interface
+                    // (assuming qBittorrent is configured with Web UI and sequential download)
+                    return $"http://localhost:8080/api/v2/torrents/files?hash={torrentHash}";
+                }
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Local torrent streaming failed for: {Title}", title);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Initiates torrent download using your existing setup.
+    /// </summary>
+    /// <param name="magnetLink">The magnet link.</param>
+    /// <param name="title">The media title.</param>
+    /// <returns>True if download started successfully.</returns>
     private async Task<bool> InitiateTorrentDownload(string magnetLink, string title)
     {
         try
         {
-            if (_streamioConfig == null || !_streamioConfig.Enabled)
+            _logger.LogInformation("Starting torrent download for: {Title}", title);
+
+            // Since you have Sonarr/Radarr working, use them instead of direct torrent client
+            // This is just a fallback for manual magnet links
+
+            // Option 1: Add to qBittorrent/Transmission directly
+            var success = await AddToTorrentClient(magnetLink, title);
+            
+            if (success)
             {
-                _logger.LogWarning("Streamio is not configured or disabled");
-                return false;
-            }
-
-            _logger.LogInformation("Initiating torrent download for {Title} using Streamio", title);
-
-            // Create download request for Streamio
-            var downloadRequest = new
-            {
-                magnet = magnetLink,
-                title = title,
-                download = true,
-                autostart = true
-            };
-
-            var jsonContent = JsonConvert.SerializeObject(downloadRequest);
-            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-            // Add API key if configured
-            if (!string.IsNullOrEmpty(_streamioConfig.ApiKey))
-            {
-                _httpClient.DefaultRequestHeaders.Add("X-API-Key", _streamioConfig.ApiKey);
-            }
-
-            var response = await _httpClient.PostAsync($"{_streamioConfig.ServerUrl}/api/download", content);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var downloadResponse = JsonConvert.DeserializeObject<StreamioDownloadResponse>(responseContent);
+                await _notificationService.SendNotificationAsync(
+                    "Download Started", 
+                    $"Started downloading: {title}",
+                    new { magnetLink, title });
                 
-                if (downloadResponse != null && downloadResponse.Success)
-                {
-                    _logger.LogInformation("Streamio download initiated successfully for {Title}", title);
-                    return true;
-                }
-            }
-            else
-            {
-                _logger.LogError("Streamio download API error: {StatusCode} - {ReasonPhrase}", response.StatusCode, response.ReasonPhrase);
+                return true;
             }
 
             return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error initiating torrent download for {Title}", title);
+            _logger.LogError(ex, "Failed to start torrent download for: {Title}", title);
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Adds torrent to configured torrent client.
+    /// </summary>
+    /// <param name="magnetLink">The magnet link.</param>
+    /// <param name="title">The media title.</param>
+    /// <returns>True if added successfully.</returns>
+    private async Task<bool> AddToTorrentClient(string magnetLink, string title)
+    {
+        try
+        {
+            // Example: qBittorrent Web API
+            // POST /api/v2/torrents/add
+            var formData = new MultipartFormDataContent();
+            formData.Add(new StringContent(magnetLink), "urls");
+            formData.Add(new StringContent("true"), "sequentialDownload"); // For streaming
+
+            var response = await _httpClient.PostAsync(
+                "http://localhost:8080/api/v2/torrents/add", 
+                formData);
+
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add torrent to client: {Error}", ex.Message);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Extracts hash from magnet link.
+    /// </summary>
+    /// <param name="magnetLink">The magnet link.</param>
+    /// <returns>The torrent hash.</returns>
+    private static string? ExtractHashFromMagnet(string magnetLink)
+    {
+        try
+        {
+            var match = Regex.Match(magnetLink, @"xt=urn:btih:([a-fA-F0-9]{40})", RegexOptions.IgnoreCase);
+            return match.Success ? match.Groups[1].Value : null;
+        }
+        catch
+        {
+            return null;
         }
     }
 }

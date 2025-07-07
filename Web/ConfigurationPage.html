@@ -346,27 +346,55 @@
         </div>
 
         <div class="config-section">
-            <h2>🎬 Streamio Integration</h2>
+            <h2>🎬 Torrent Streaming Integration</h2>
             
             <div class="checkbox-group">
-                <input type="checkbox" id="streamioEnabled" checked />
-                <label for="streamioEnabled">Enable Streamio</label>
+                <input type="checkbox" id="streamioEnabled" />
+                <label for="streamioEnabled">Enable Instant Streaming</label>
             </div>
-            <div class="help-text">Use Streamio for real-time streaming and downloading.</div>
+            <div class="help-text">Allow users to stream torrents instantly while they download. Requires a torrent client or WebTorrent service.</div>
 
             <div class="form-group">
-                <label for="streamioUrl">Streamio Server URL</label>
-                <input type="text" id="streamioUrl" value="http://localhost:11470" placeholder="http://localhost:11470" />
+                <label for="torrentClientType">Torrent Client</label>
+                <select id="torrentClientType">
+                    <option value="qbittorrent" selected>qBittorrent</option>
+                    <option value="transmission">Transmission</option>
+                    <option value="webtorrent">WebTorrent Server</option>
+                </select>
                 <div class="help-text">
-                    URL of your local Streamio instance.
+                    The torrent client you want to use for streaming.
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="streamioApiKey">Streamio API Key (Optional)</label>
-                <input type="text" id="streamioApiKey" placeholder="Enter API key if required..." />
+                <label for="torrentClientUrl">Torrent Client Web UI URL</label>
+                <input type="text" id="torrentClientUrl" value="http://localhost:8080" placeholder="http://localhost:8080" />
                 <div class="help-text">
-                    API key for authentication (if your Streamio instance requires it).
+                    URL of your torrent client's web interface (qBittorrent: 8080, Transmission: 9091).
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="torrentClientUsername">Username</label>
+                <input type="text" id="torrentClientUsername" value="admin" placeholder="admin" />
+                <div class="help-text">
+                    Username for torrent client authentication.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="torrentClientPassword">Password</label>
+                <input type="password" id="torrentClientPassword" placeholder="Enter password..." />
+                <div class="help-text">
+                    Password for torrent client authentication.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="streamioUrl">WebTorrent Server URL (Optional)</label>
+                <input type="text" id="streamioUrl" value="http://localhost:3000" placeholder="http://localhost:3000" />
+                <div class="help-text">
+                    URL of external WebTorrent streaming service (if using one).
                 </div>
             </div>
 
@@ -374,7 +402,7 @@
                 <input type="checkbox" id="streamioHttps" />
                 <label for="streamioHttps">Use HTTPS</label>
             </div>
-            <div class="help-text">Enable if your Streamio instance uses SSL/TLS.</div>
+            <div class="help-text">Enable if your services use SSL/TLS.</div>
         </div>
 
         <div class="config-section">
@@ -479,6 +507,9 @@
                 document.getElementById('enableDownloads').checked = config.downloadsEnabled ?? true;
                 document.getElementById('enableNotifications').checked = config.notificationsEnabled ?? true;
                 document.getElementById('autoCheckLibrary').checked = config.autoCheckLibrary ?? true;
+                
+                // Note: TMDB API key is not returned for security reasons
+                // The user will need to re-enter it if making changes
             }
 
             updateApiKeyStatus(configured) {
@@ -517,14 +548,65 @@
                         return;
                     }
 
-                    // In a real implementation, this would save to the plugin configuration
-                    this.showNotification('Configuration saved successfully! Plugin will restart to apply changes.', 'success');
-                    this.updateApiKeyStatus(true);
-                    
-                    // Simulate restart delay
-                    setTimeout(() => {
-                        this.showNotification('Plugin restarted with new configuration', 'info');
-                    }, 3000);
+                    // Build full configuration object
+                    const fullConfig = {
+                        tmdbApiKey: config.tmdbApiKey,
+                        enableStreaming: config.enableStreaming,
+                        enableDownloads: config.enableDownloads,
+                        enableNotifications: config.enableNotifications,
+                        autoCheckLibrary: config.autoCheckLibrary,
+                        defaultQuality: config.defaultQuality,
+                        maxSearchResults: config.maxSearchResults,
+                        apiTimeoutSeconds: config.apiTimeoutSeconds,
+                        cacheExpirationMinutes: 60,
+                        maxConcurrentRequests: 10,
+                        enableRateLimiting: true,
+                        requestsPerSecond: 10,
+                        streamioConfig: {
+                            enabled: document.getElementById('streamioEnabled').checked,
+                            serverUrl: document.getElementById('streamioUrl').value,
+                            apiKey: "", // Not used anymore
+                            timeoutSeconds: 30,
+                            useHttps: document.getElementById('streamioHttps').checked,
+                            clientType: document.getElementById('torrentClientType').value,
+                            torrentClientUrl: document.getElementById('torrentClientUrl').value,
+                            torrentClientUsername: document.getElementById('torrentClientUsername').value,
+                            torrentClientPassword: document.getElementById('torrentClientPassword').value
+                        },
+                        sonarrConfig: {
+                            enabled: document.getElementById('sonarrEnabled').checked,
+                            serverUrl: document.getElementById('sonarrUrl').value,
+                            apiKey: document.getElementById('sonarrApiKey').value,
+                            timeoutSeconds: 30,
+                            qualityProfileId: parseInt(document.getElementById('sonarrQualityProfile').value),
+                            qualityProfile: "HD-1080p"
+                        },
+                        radarrConfig: {
+                            enabled: document.getElementById('radarrEnabled').checked,
+                            serverUrl: document.getElementById('radarrUrl').value,
+                            apiKey: document.getElementById('radarrApiKey').value,
+                            timeoutSeconds: 30,
+                            qualityProfileId: parseInt(document.getElementById('radarrQualityProfile').value),
+                            qualityProfile: "HD-1080p"
+                        }
+                    };
+
+                    // Save configuration via API
+                    const response = await fetch('/jellyscout/config/save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(fullConfig)
+                    });
+
+                    if (response.ok) {
+                        this.showNotification('Configuration saved successfully!', 'success');
+                        this.updateApiKeyStatus(true);
+                    } else {
+                        const errorData = await response.json();
+                        this.showNotification(`Failed to save configuration: ${errorData.error}`, 'error');
+                    }
                     
                 } catch (error) {
                     console.error('Failed to save configuration:', error);
@@ -569,34 +651,73 @@
                 document.getElementById('maxSearchResults').value = 50;
                 document.getElementById('apiTimeout').value = 30;
                 
+                // Reset streaming configuration
+                document.getElementById('streamioEnabled').checked = false;
+                document.getElementById('torrentClientType').value = 'qbittorrent';
+                document.getElementById('torrentClientUrl').value = 'http://localhost:8080';
+                document.getElementById('torrentClientUsername').value = 'admin';
+                document.getElementById('torrentClientPassword').value = '';
+                document.getElementById('streamioUrl').value = 'http://localhost:3000';
+                document.getElementById('streamioHttps').checked = false;
+                
+                // Reset Sonarr configuration
+                document.getElementById('sonarrEnabled').checked = true;
+                document.getElementById('sonarrUrl').value = 'http://localhost:8989';
+                document.getElementById('sonarrApiKey').value = '';
+                document.getElementById('sonarrQualityProfile').value = 1;
+                
+                // Reset Radarr configuration
+                document.getElementById('radarrEnabled').checked = true;
+                document.getElementById('radarrUrl').value = 'http://localhost:7878';
+                document.getElementById('radarrApiKey').value = '';
+                document.getElementById('radarrQualityProfile').value = 1;
+                
                 this.updateApiKeyStatus(false);
                 this.showNotification('Configuration reset to defaults', 'info');
             }
 
             showNotification(message, type = 'info') {
                 const notification = document.getElementById('notification');
+                if (!notification) {
+                    console.error('Notification element not found');
+                    return;
+                }
+                
                 notification.textContent = message;
                 notification.className = `notification ${type} show`;
 
                 setTimeout(() => {
-                    notification.classList.remove('show');
+                    if (notification && notification.classList) {
+                        notification.classList.remove('show');
+                    }
                 }, 5000);
             }
         }
 
-        // Global functions for onclick handlers
-        const configManager = new ConfigurationManager();
+        // Initialize when DOM is ready
+        let configManager;
         
+        document.addEventListener('DOMContentLoaded', function() {
+            configManager = new ConfigurationManager();
+        });
+        
+        // Global functions for onclick handlers
         function saveConfiguration() {
-            configManager.saveConfiguration();
+            if (configManager) {
+                configManager.saveConfiguration();
+            }
         }
         
         function testConfiguration() {
-            configManager.testConfiguration();
+            if (configManager) {
+                configManager.testConfiguration();
+            }
         }
         
         function resetConfiguration() {
-            configManager.resetConfiguration();
+            if (configManager) {
+                configManager.resetConfiguration();
+            }
         }
     </script>
 </body>

@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.JellyScout.Configuration;
+using Jellyfin.Plugin.JellyScout.Models;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -41,52 +42,279 @@ public class SonarrService
     }
 
     /// <summary>
-    /// Searches for TV show torrents using Sonarr.
+    /// Adds a TV show to Sonarr and searches for it.
     /// </summary>
     /// <param name="title">The TV show title.</param>
+    /// <param name="tmdbId">The TMDB ID.</param>
     /// <param name="year">The release year.</param>
-    /// <param name="season">The season number.</param>
-    /// <param name="quality">The preferred quality.</param>
-    /// <returns>A collection of torrent results.</returns>
-    public async Task<IEnumerable<TorrentResult>> SearchTVShowTorrentsAsync(
-        string title, 
-        int? year = null, 
-        int? season = null, 
-        string quality = "1080p")
+    /// <param name="qualityProfileId">The quality profile ID.</param>
+    /// <returns>True if successfully added.</returns>
+    public async Task<bool> AddTVShowAsync(string title, int tmdbId, int? year = null, int? qualityProfileId = null)
     {
         try
         {
             if (_sonarrConfig == null || !_sonarrConfig.Enabled)
             {
                 _logger.LogWarning("Sonarr is not configured or disabled");
-                return Enumerable.Empty<TorrentResult>();
+                return false;
             }
 
-            if (string.IsNullOrWhiteSpace(title))
+            if (string.IsNullOrWhiteSpace(_sonarrConfig.ApiKey))
             {
-                _logger.LogWarning("Title is required for Sonarr search");
-                return Enumerable.Empty<TorrentResult>();
+                _logger.LogError("Sonarr API key is not configured");
+                return false;
             }
 
-            _logger.LogInformation("Searching Sonarr for TV show: {Title}", title);
+            _logger.LogInformation("Adding TV show to Sonarr: {Title} (TMDB: {TmdbId})", title, tmdbId);
 
-            // First, search for the series
-            var seriesId = await FindSeriesIdAsync(title, year);
-            if (seriesId == null)
+            // First, lookup the series using Sonarr's lookup API
+            var lookupResults = await LookupSeriesAsync(title, year);
+            if (!lookupResults.Any())
             {
-                _logger.LogWarning("Could not find series ID for: {Title}", title);
-                return Enumerable.Empty<TorrentResult>();
+                _logger.LogError("Could not find series in Sonarr lookup: {Title}", title);
+                return false;
             }
 
-            // Search for releases
-            var releases = await SearchReleasesAsync(seriesId.Value, season, quality);
-            
-            return releases.Select(ConvertToTorrentResult);
+            var selectedSeries = lookupResults.First();
+
+            // Check if series already exists in Sonarr
+            var existingSeries = await GetExistingSeriesAsync(selectedSeries.TvdbId);
+            if (existingSeries != null)
+            {
+                _logger.LogInformation("Series already exists in Sonarr: {Title}", title);
+                return true; // Already exists, consider it successful
+            }
+
+            // Get root folders
+            var rootFolders = await GetRootFoldersAsync();
+            var rootFolderPath = rootFolders.FirstOrDefault()?.Path ?? "/tv/";
+
+            // Add series to Sonarr using the lookup result
+            var addSeriesRequest = new
+            {
+                title = selectedSeries.Title,
+                titleSlug = selectedSeries.TitleSlug,
+                tvdbId = selectedSeries.TvdbId,
+                qualityProfileId = qualityProfileId ?? _sonarrConfig.QualityProfileId,
+                languageProfileId = 1, // Default language profile
+                rootFolderPath = rootFolderPath,
+                monitored = true,
+                seasonFolder = true,
+                addOptions = new
+                {
+                    searchForMissingEpisodes = true,
+                    ignoreEpisodesWithFiles = false,
+                    ignoreEpisodesWithoutFiles = false
+                }
+            };
+
+            var jsonContent = JsonConvert.SerializeObject(addSeriesRequest);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _sonarrConfig.ApiKey);
+
+            var response = await _httpClient.PostAsync($"{_sonarrConfig.ServerUrl}/api/v3/series", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Successfully added TV show to Sonarr: {Title}", title);
+                return true;
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Sonarr API error: {StatusCode} - {Content}", response.StatusCode, errorContent);
+                return false;
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error searching Sonarr for TV show: {Title}", title);
-            return Enumerable.Empty<TorrentResult>();
+            _logger.LogError(ex, "Error adding TV show to Sonarr: {Title}", title);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Gets the download status of a TV show by TMDB ID.
+    /// </summary>
+    /// <param name="tmdbId">The TMDB ID.</param>
+    /// <returns>Download status information.</returns>
+    public async Task<DownloadStatus> GetDownloadStatusAsync(int tmdbId)
+    {
+        try
+        {
+            if (_sonarrConfig == null || !_sonarrConfig.Enabled)
+            {
+                return new DownloadStatus { Status = MediaStatus.NotInSystem, Message = "Sonarr not configured" };
+            }
+
+            // First check if series exists in Sonarr
+            var series = await GetExistingSeriesByTmdbIdAsync(tmdbId);
+            if (series == null)
+            {
+                return new DownloadStatus { Status = MediaStatus.NotInSystem, Message = "Not added to Sonarr" };
+            }
+
+            // Check download queue for active downloads
+            var queueItems = await GetQueueAsync();
+            var activeDownloads = queueItems.Where(q => q.SeriesId == series.Id).ToList();
+
+            if (activeDownloads.Any())
+            {
+                var downloadProgress = activeDownloads.Average(d => d.Size > 0 ? (double)d.SizeLeft / d.Size * 100 : 0);
+                return new DownloadStatus 
+                { 
+                    Status = MediaStatus.Downloading, 
+                    Message = $"Downloading ({activeDownloads.Count} items)",
+                    Progress = (int)(100 - downloadProgress),
+                    Details = activeDownloads.Select(d => d.Title).ToList()
+                };
+            }
+
+            // Check if all episodes are downloaded
+            var episodes = await GetSeriesEpisodesAsync(series.Id);
+            var totalEpisodes = episodes.Count();
+            var downloadedEpisodes = episodes.Count(e => e.HasFile);
+
+            if (downloadedEpisodes == totalEpisodes && totalEpisodes > 0)
+            {
+                return new DownloadStatus 
+                { 
+                    Status = MediaStatus.Downloaded, 
+                    Message = $"Complete ({downloadedEpisodes}/{totalEpisodes} episodes)",
+                    Progress = 100
+                };
+            }
+            else if (downloadedEpisodes > 0)
+            {
+                return new DownloadStatus 
+                { 
+                    Status = MediaStatus.PartiallyDownloaded, 
+                    Message = $"Partial ({downloadedEpisodes}/{totalEpisodes} episodes)",
+                    Progress = totalEpisodes > 0 ? (int)((double)downloadedEpisodes / totalEpisodes * 100) : 0
+                };
+            }
+            else
+            {
+                return new DownloadStatus 
+                { 
+                    Status = MediaStatus.Wanted, 
+                    Message = "Added but not downloaded",
+                    Progress = 0
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting download status for TMDB ID: {TmdbId}", tmdbId);
+            return new DownloadStatus { Status = MediaStatus.Failed, Message = $"Error: {ex.Message}" };
+        }
+    }
+
+    /// <summary>
+    /// Gets the current download queue from Sonarr.
+    /// </summary>
+    /// <returns>List of queue items.</returns>
+    private async Task<IEnumerable<SonarrQueueItem>> GetQueueAsync()
+    {
+        if (_sonarrConfig == null)
+        {
+            return Enumerable.Empty<SonarrQueueItem>();
+        }
+
+        try
+        {
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _sonarrConfig.ApiKey);
+
+            var response = await _httpClient.GetAsync($"{_sonarrConfig.ServerUrl}/api/v3/queue");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var queueResponse = JsonConvert.DeserializeObject<SonarrQueueResponse>(content);
+                return queueResponse?.Records ?? Enumerable.Empty<SonarrQueueItem>();
+            }
+
+            return Enumerable.Empty<SonarrQueueItem>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting Sonarr queue");
+            return Enumerable.Empty<SonarrQueueItem>();
+        }
+    }
+
+    /// <summary>
+    /// Gets episodes for a series.
+    /// </summary>
+    /// <param name="seriesId">The series ID.</param>
+    /// <returns>List of episodes.</returns>
+    private async Task<IEnumerable<SonarrEpisode>> GetSeriesEpisodesAsync(int seriesId)
+    {
+        if (_sonarrConfig == null)
+        {
+            return Enumerable.Empty<SonarrEpisode>();
+        }
+
+        try
+        {
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _sonarrConfig.ApiKey);
+
+            var response = await _httpClient.GetAsync($"{_sonarrConfig.ServerUrl}/api/v3/episode?seriesId={seriesId}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var episodes = JsonConvert.DeserializeObject<SonarrEpisode[]>(content);
+                return episodes ?? Enumerable.Empty<SonarrEpisode>();
+            }
+
+            return Enumerable.Empty<SonarrEpisode>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting episodes for series ID: {SeriesId}", seriesId);
+            return Enumerable.Empty<SonarrEpisode>();
+        }
+    }
+
+    /// <summary>
+    /// Gets existing series by TMDB ID.
+    /// </summary>
+    /// <param name="tmdbId">The TMDB ID.</param>
+    /// <returns>The series if found.</returns>
+    private async Task<SonarrSeries?> GetExistingSeriesByTmdbIdAsync(int tmdbId)
+    {
+        if (_sonarrConfig == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _sonarrConfig.ApiKey);
+
+            var response = await _httpClient.GetAsync($"{_sonarrConfig.ServerUrl}/api/v3/series");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var allSeries = JsonConvert.DeserializeObject<SonarrSeries[]>(content);
+                
+                // Find series with matching TMDB ID
+                return allSeries?.FirstOrDefault(s => s.TmdbId == tmdbId);
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting existing series by TMDB ID: {TmdbId}", tmdbId);
+            return null;
         }
     }
 
@@ -148,6 +376,127 @@ public class SonarrService
         }
     }
 
+    /// <summary>
+    /// Searches for series using Sonarr's lookup API.
+    /// </summary>
+    /// <param name="title">The series title.</param>
+    /// <param name="year">The release year.</param>
+    /// <returns>Collection of series lookup results.</returns>
+    private async Task<IEnumerable<SonarrSeries>> LookupSeriesAsync(string title, int? year = null)
+    {
+        if (_sonarrConfig == null)
+        {
+            _logger.LogWarning("Sonarr configuration is not set");
+            return Enumerable.Empty<SonarrSeries>();
+        }
+
+        try
+        {
+            var searchUrl = $"{_sonarrConfig.ServerUrl}/api/v3/series/lookup?term={Uri.EscapeDataString(title)}";
+            
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _sonarrConfig.ApiKey);
+
+            var response = await _httpClient.GetAsync(searchUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var series = JsonConvert.DeserializeObject<SonarrSeries[]>(content);
+
+                if (series != null && series.Length > 0)
+                {
+                    // Return all series since TV shows don't have a single "year"
+                    return series;
+                }
+            }
+
+            return Enumerable.Empty<SonarrSeries>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error looking up series: {Title}", title);
+            return Enumerable.Empty<SonarrSeries>();
+        }
+    }
+
+    /// <summary>
+    /// Gets existing series by TVDB ID.
+    /// </summary>
+    /// <param name="tvdbId">The TVDB ID.</param>
+    /// <returns>Existing series or null.</returns>
+    private async Task<SonarrSeries?> GetExistingSeriesAsync(int? tvdbId)
+    {
+        if (_sonarrConfig == null)
+        {
+            _logger.LogWarning("Sonarr configuration is not set");
+            return null;
+        }
+
+        try
+        {
+            var seriesUrl = $"{_sonarrConfig.ServerUrl}/api/v3/series";
+            
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _sonarrConfig.ApiKey);
+
+            var response = await _httpClient.GetAsync(seriesUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var series = JsonConvert.DeserializeObject<SonarrSeries[]>(content);
+
+                return series?.FirstOrDefault(s => s.TvdbId.HasValue && s.TvdbId == tvdbId);
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting existing series with TVDB ID: {TvdbId}", tvdbId);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Gets root folders from Sonarr.
+    /// </summary>
+    /// <returns>Collection of root folders.</returns>
+    private async Task<IEnumerable<SonarrRootFolder>> GetRootFoldersAsync()
+    {
+        if (_sonarrConfig == null)
+        {
+            _logger.LogWarning("Sonarr configuration is not set");
+            return Enumerable.Empty<SonarrRootFolder>();
+        }
+
+        try
+        {
+            var rootFolderUrl = $"{_sonarrConfig.ServerUrl}/api/v3/rootfolder";
+            
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _sonarrConfig.ApiKey);
+
+            var response = await _httpClient.GetAsync(rootFolderUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var rootFolders = JsonConvert.DeserializeObject<SonarrRootFolder[]>(content);
+
+                return rootFolders ?? Enumerable.Empty<SonarrRootFolder>();
+            }
+
+            return Enumerable.Empty<SonarrRootFolder>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting root folders from Sonarr");
+            return Enumerable.Empty<SonarrRootFolder>();
+        }
+    }
+
     private async Task<int?> FindSeriesIdAsync(string title, int? year = null)
     {
         if (_sonarrConfig == null)
@@ -172,10 +521,9 @@ public class SonarrService
 
                 if (series != null && series.Length > 0)
                 {
-                    // Find the best match
+                    // Find the best match by title
                     var bestMatch = series.FirstOrDefault(s => 
-                        s.Title.Equals(title, StringComparison.OrdinalIgnoreCase) ||
-                        (year.HasValue && s.Year == year.Value));
+                        s.Title.Equals(title, StringComparison.OrdinalIgnoreCase));
 
                     return bestMatch?.Id ?? series[0].Id;
                 }
@@ -349,66 +697,6 @@ public class SonarrService
         
         return "Unknown";
     }
-}
-
-/// <summary>
-/// Represents a Sonarr series.
-/// </summary>
-public class SonarrSeries
-{
-    /// <summary>
-    /// Gets or sets the series ID.
-    /// </summary>
-    [JsonProperty("id")]
-    public int Id { get; set; }
-
-    /// <summary>
-    /// Gets or sets the title.
-    /// </summary>
-    [JsonProperty("title")]
-    public string Title { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the year.
-    /// </summary>
-    [JsonProperty("year")]
-    public int Year { get; set; }
-
-    /// <summary>
-    /// Gets or sets the TVDB ID.
-    /// </summary>
-    [JsonProperty("tvdbId")]
-    public int? TvdbId { get; set; }
-}
-
-/// <summary>
-/// Represents a Sonarr episode.
-/// </summary>
-public class SonarrEpisode
-{
-    /// <summary>
-    /// Gets or sets the episode ID.
-    /// </summary>
-    [JsonProperty("id")]
-    public int Id { get; set; }
-
-    /// <summary>
-    /// Gets or sets the season number.
-    /// </summary>
-    [JsonProperty("seasonNumber")]
-    public int SeasonNumber { get; set; }
-
-    /// <summary>
-    /// Gets or sets the episode number.
-    /// </summary>
-    [JsonProperty("episodeNumber")]
-    public int EpisodeNumber { get; set; }
-
-    /// <summary>
-    /// Gets or sets the title.
-    /// </summary>
-    [JsonProperty("title")]
-    public string Title { get; set; } = string.Empty;
 }
 
 /// <summary>

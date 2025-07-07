@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Jellyfin.Plugin.JellyScout.Models;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
@@ -39,21 +40,21 @@ public class FilteringService
 
         // Apply filters
         filteredResults = ApplyGenreFilter(filteredResults, filters.Genres);
-        filteredResults = ApplyYearFilter(filteredResults, filters.YearFrom, filters.YearTo);
+        filteredResults = ApplyYearFilter(filteredResults, filters.MinYear, filters.MaxYear);
         filteredResults = ApplyRatingFilter(filteredResults, filters.MinRating, filters.MaxRating);
-        filteredResults = ApplyMediaTypeFilter(filteredResults, filters.MediaTypes);
-        filteredResults = ApplyLanguageFilter(filteredResults, filters.Languages);
+        
+        // Convert media type to list for filtering
+        var mediaTypes = string.IsNullOrEmpty(filters.MediaType) ? new List<string>() : new List<string> { filters.MediaType };
+        filteredResults = ApplyMediaTypeFilter(filteredResults, mediaTypes);
+        
+        // Convert language to list for filtering
+        var languages = string.IsNullOrEmpty(filters.Language) ? new List<string>() : new List<string> { filters.Language };
+        filteredResults = ApplyLanguageFilter(filteredResults, languages);
+        
         filteredResults = ApplyRuntimeFilter(filteredResults, filters.MinRuntime, filters.MaxRuntime);
 
         // Apply sorting
         filteredResults = ApplySorting(filteredResults, filters.SortBy, filters.SortOrder);
-
-        // Apply pagination
-        if (filters.Page > 0 && filters.PageSize > 0)
-        {
-            var skip = (filters.Page - 1) * filters.PageSize;
-            filteredResults = filteredResults.Skip(skip).Take(filters.PageSize);
-        }
 
         _logger.LogDebug("Applied filters and sorting. Original count: {OriginalCount}, Filtered count: {FilteredCount}", 
             results.Count(), filteredResults.Count());
@@ -234,15 +235,15 @@ public class FilteringService
         });
     }
 
-    private IEnumerable<JObject> ApplySorting(IEnumerable<JObject> results, SortOption sortBy, SortOrder sortOrder)
+    private IEnumerable<JObject> ApplySorting(IEnumerable<JObject> results, string sortBy, SortOrder sortOrder)
     {
-        var sortedResults = sortBy switch
+        var sortedResults = sortBy.ToLowerInvariant() switch
         {
-            SortOption.Popularity => results.OrderBy(r => r["popularity"]?.Value<double>() ?? 0),
-            SortOption.Rating => results.OrderBy(r => r["vote_average"]?.Value<double>() ?? 0),
-            SortOption.ReleaseDate => results.OrderBy(r => GetReleaseDate(r)),
-            SortOption.Title => results.OrderBy(r => GetTitle(r)),
-            SortOption.VoteCount => results.OrderBy(r => r["vote_count"]?.Value<int>() ?? 0),
+            "popularity" => results.OrderBy(r => r["popularity"]?.Value<double>() ?? 0),
+            "rating" => results.OrderBy(r => r["vote_average"]?.Value<double>() ?? 0),
+            "releasedate" => results.OrderBy(r => GetReleaseDate(r)),
+            "title" => results.OrderBy(r => GetTitle(r)),
+            "votecount" => results.OrderBy(r => r["vote_count"]?.Value<int>() ?? 0),
             _ => results.OrderBy(r => r["popularity"]?.Value<double>() ?? 0)
         };
 
@@ -279,76 +280,7 @@ public class FilteringService
     }
 }
 
-/// <summary>
-/// Search filter criteria.
-/// </summary>
-public class SearchFilters
-{
-    /// <summary>
-    /// Gets or sets the genres to filter by.
-    /// </summary>
-    public List<string> Genres { get; set; } = new();
 
-    /// <summary>
-    /// Gets or sets the media types to filter by (movie, tv).
-    /// </summary>
-    public List<string> MediaTypes { get; set; } = new();
-
-    /// <summary>
-    /// Gets or sets the languages to filter by.
-    /// </summary>
-    public List<string> Languages { get; set; } = new();
-
-    /// <summary>
-    /// Gets or sets the minimum year for filtering.
-    /// </summary>
-    public int? YearFrom { get; set; }
-
-    /// <summary>
-    /// Gets or sets the maximum year for filtering.
-    /// </summary>
-    public int? YearTo { get; set; }
-
-    /// <summary>
-    /// Gets or sets the minimum rating for filtering.
-    /// </summary>
-    public double? MinRating { get; set; }
-
-    /// <summary>
-    /// Gets or sets the maximum rating for filtering.
-    /// </summary>
-    public double? MaxRating { get; set; }
-
-    /// <summary>
-    /// Gets or sets the minimum runtime in minutes.
-    /// </summary>
-    public int? MinRuntime { get; set; }
-
-    /// <summary>
-    /// Gets or sets the maximum runtime in minutes.
-    /// </summary>
-    public int? MaxRuntime { get; set; }
-
-    /// <summary>
-    /// Gets or sets the sort option.
-    /// </summary>
-    public SortOption SortBy { get; set; } = SortOption.Popularity;
-
-    /// <summary>
-    /// Gets or sets the sort order.
-    /// </summary>
-    public SortOrder SortOrder { get; set; } = SortOrder.Descending;
-
-    /// <summary>
-    /// Gets or sets the page number for pagination.
-    /// </summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>
-    /// Gets or sets the page size for pagination.
-    /// </summary>
-    public int PageSize { get; set; } = 20;
-}
 
 /// <summary>
 /// Available filter options.
@@ -408,49 +340,6 @@ public class RatingRange
     public double Max { get; set; }
 }
 
-/// <summary>
-/// Sort options for search results.
-/// </summary>
-public enum SortOption
-{
-    /// <summary>
-    /// Sort by popularity.
-    /// </summary>
-    Popularity,
 
-    /// <summary>
-    /// Sort by rating.
-    /// </summary>
-    Rating,
 
-    /// <summary>
-    /// Sort by release date.
-    /// </summary>
-    ReleaseDate,
-
-    /// <summary>
-    /// Sort by title.
-    /// </summary>
-    Title,
-
-    /// <summary>
-    /// Sort by vote count.
-    /// </summary>
-    VoteCount
-}
-
-/// <summary>
-/// Sort order options.
-/// </summary>
-public enum SortOrder
-{
-    /// <summary>
-    /// Ascending order.
-    /// </summary>
-    Ascending,
-
-    /// <summary>
-    /// Descending order.
-    /// </summary>
-    Descending
-} 
+ 

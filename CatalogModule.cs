@@ -110,8 +110,8 @@ public class CatalogModule
                     tmdbId,
                     mediaType,
                     overview,
-                    posterPath = !string.IsNullOrEmpty(posterPath) ? $"https://image.tmdb.org/t/p/w500{posterPath}" : null,
-                    backdropPath = !string.IsNullOrEmpty(backdropPath) ? $"https://image.tmdb.org/t/p/w1280{backdropPath}" : null,
+                    posterPath = _tmdbService.GetPosterUrl(posterPath, "w500"),
+                    backdropPath = _tmdbService.GetBackdropUrl(backdropPath, "w1280"),
                     popularity,
                     voteAverage,
                     alreadyInLibrary

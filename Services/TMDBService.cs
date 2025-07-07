@@ -19,6 +19,13 @@ public class TMDBService
     private readonly CacheService _cacheService;
     private readonly string _apiKey;
     private const string BaseUrl = "https://api.themoviedb.org/3";
+    private const string DefaultLanguage = "en-US";
+    private const string DefaultRegion = "US";
+    
+    // Dynamic image configuration
+    private string? _imageBaseUrl;
+    private string[]? _posterSizes;
+    private string[]? _backdropSizes;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="TMDBService"/> class.
@@ -36,6 +43,92 @@ public class TMDBService
         // Configure HttpClient
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "JellyfinJellyScout/2.0");
         _httpClient.Timeout = TimeSpan.FromSeconds(30);
+        
+        // Initialize image configuration
+        _ = InitializeImageConfigurationAsync();
+    }
+
+    /// <summary>
+    /// Initializes the image configuration from TMDB.
+    /// </summary>
+    private async Task InitializeImageConfigurationAsync()
+    {
+        try
+        {
+            var cachedConfig = await _cacheService.GetOrCreateAsync("tmdb_image_config", async () =>
+            {
+                var response = await _httpClient.GetAsync($"{BaseUrl}/configuration?api_key={_apiKey}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var config = JObject.Parse(content);
+                    return new
+                    {
+                        BaseUrl = config["images"]?["secure_base_url"]?.Value<string>() ?? "https://image.tmdb.org/t/p/",
+                                                 PosterSizes = config["images"]?["poster_sizes"]?.Values<string>().Where(s => !string.IsNullOrEmpty(s)).ToArray() ?? new[] { "w500" },
+                         BackdropSizes = config["images"]?["backdrop_sizes"]?.Values<string>().Where(s => !string.IsNullOrEmpty(s)).ToArray() ?? new[] { "w1280" }
+                    };
+                }
+                return null;
+            }, TimeSpan.FromDays(7)); // Cache for a week
+
+            if (cachedConfig != null)
+            {
+                _imageBaseUrl = cachedConfig.BaseUrl;
+                _posterSizes = cachedConfig.PosterSizes;
+                _backdropSizes = cachedConfig.BackdropSizes;
+            }
+            else
+            {
+                // Fallback to defaults
+                _imageBaseUrl = "https://image.tmdb.org/t/p/";
+                _posterSizes = new[] { "w500" };
+                _backdropSizes = new[] { "w1280" };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to initialize TMDB image configuration, using defaults");
+            _imageBaseUrl = "https://image.tmdb.org/t/p/";
+            _posterSizes = new[] { "w500" };
+            _backdropSizes = new[] { "w1280" };
+        }
+    }
+
+    /// <summary>
+    /// Gets the appropriate poster URL for the given path.
+    /// </summary>
+    /// <param name="posterPath">The poster path from TMDB.</param>
+    /// <param name="size">The desired size (defaults to w500).</param>
+    /// <returns>The full poster URL.</returns>
+    public string? GetPosterUrl(string? posterPath, string size = "w500")
+    {
+        if (string.IsNullOrEmpty(posterPath) || string.IsNullOrEmpty(_imageBaseUrl))
+            return null;
+            
+        // Ensure size is available
+        if (_posterSizes?.Contains(size) != true)
+            size = "w500";
+            
+        return $"{_imageBaseUrl}{size}{posterPath}";
+    }
+
+    /// <summary>
+    /// Gets the appropriate backdrop URL for the given path.
+    /// </summary>
+    /// <param name="backdropPath">The backdrop path from TMDB.</param>
+    /// <param name="size">The desired size (defaults to w1280).</param>
+    /// <returns>The full backdrop URL.</returns>
+    public string? GetBackdropUrl(string? backdropPath, string size = "w1280")
+    {
+        if (string.IsNullOrEmpty(backdropPath) || string.IsNullOrEmpty(_imageBaseUrl))
+            return null;
+            
+        // Ensure size is available
+        if (_backdropSizes?.Contains(size) != true)
+            size = "w1280";
+            
+        return $"{_imageBaseUrl}{size}{backdropPath}";
     }
 
     /// <summary>
@@ -43,8 +136,10 @@ public class TMDBService
     /// </summary>
     /// <param name="query">The search query.</param>
     /// <param name="page">The page number (default: 1).</param>
+    /// <param name="language">The language (default: en-US).</param>
+    /// <param name="region">The region (default: US).</param>
     /// <returns>A collection of search results.</returns>
-    public async Task<IEnumerable<JObject>> SearchAsync(string query, int page = 1)
+    public async Task<IEnumerable<JObject>> SearchAsync(string query, int page = 1, string language = DefaultLanguage, string region = DefaultRegion)
     {
         if (string.IsNullOrWhiteSpace(query))
         {
@@ -59,23 +154,23 @@ public class TMDBService
         }
 
         // Create cache key
-        var cacheKey = $"tmdb_search_{query}_{page}";
+        var cacheKey = $"tmdb_search_{query}_{page}_{language}_{region}";
 
         try
         {
             // Try to get from cache first
             var cachedResults = await _cacheService.GetOrCreateAsync(cacheKey, async () =>
             {
-                _logger.LogInformation("Searching TMDB for: {Query} (Page {Page})", query, page);
+                _logger.LogInformation("Searching TMDB for: {Query} (Page {Page}, Language: {Language}, Region: {Region})", query, page, language, region);
                 
                 var results = new List<JObject>();
                 
                 // Search movies
-                var movieResults = await SearchMoviesAsync(query, page);
+                var movieResults = await SearchMoviesAsync(query, page, language, region);
                 results.AddRange(movieResults);
                 
                 // Search TV shows
-                var tvResults = await SearchTVShowsAsync(query, page);
+                var tvResults = await SearchTVShowsAsync(query, page, language, region);
                 results.AddRange(tvResults);
                 
                 // Sort by popularity (descending)
@@ -102,11 +197,163 @@ public class TMDBService
     }
 
     /// <summary>
+    /// Gets trending movies and TV shows.
+    /// </summary>
+    /// <param name="mediaType">The media type (all, movie, tv).</param>
+    /// <param name="timeWindow">The time window (day, week).</param>
+    /// <param name="language">The language (default: en-US).</param>
+    /// <returns>A collection of trending results.</returns>
+    public async Task<IEnumerable<JObject>> GetTrendingAsync(string mediaType = "all", string timeWindow = "week", string language = DefaultLanguage)
+    {
+        if (string.IsNullOrWhiteSpace(_apiKey))
+        {
+            _logger.LogError("TMDB API key is not configured");
+            return Enumerable.Empty<JObject>();
+        }
+
+        var cacheKey = $"tmdb_trending_{mediaType}_{timeWindow}_{language}";
+
+        try
+        {
+            var cachedResults = await _cacheService.GetOrCreateAsync(cacheKey, async () =>
+            {
+                _logger.LogInformation("Getting trending {MediaType} content for {TimeWindow}", mediaType, timeWindow);
+                
+                var url = $"{BaseUrl}/trending/{mediaType}/{timeWindow}?api_key={_apiKey}&language={language}";
+                var response = await _httpClient.GetAsync(url);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Failed to get trending content. Status: {StatusCode}", response.StatusCode);
+                    return Enumerable.Empty<JObject>();
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                var result = JObject.Parse(content);
+                var results = result["results"]?.ToObject<JArray>() ?? new JArray();
+                
+                return results.Cast<JObject>().ToList();
+            }, TimeSpan.FromHours(1)); // Cache trending for 1 hour
+
+            return cachedResults ?? Enumerable.Empty<JObject>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting trending content");
+            return Enumerable.Empty<JObject>();
+        }
+    }
+
+    /// <summary>
+    /// Gets popular movies.
+    /// </summary>
+    /// <param name="page">The page number (default: 1).</param>
+    /// <param name="language">The language (default: en-US).</param>
+    /// <param name="region">The region (default: US).</param>
+    /// <returns>A collection of popular movies.</returns>
+    public async Task<IEnumerable<JObject>> GetPopularMoviesAsync(int page = 1, string language = DefaultLanguage, string region = DefaultRegion)
+    {
+        if (string.IsNullOrWhiteSpace(_apiKey))
+        {
+            _logger.LogError("TMDB API key is not configured");
+            return Enumerable.Empty<JObject>();
+        }
+
+        var cacheKey = $"tmdb_popular_movies_{page}_{language}_{region}";
+
+        try
+        {
+            var cachedResults = await _cacheService.GetOrCreateAsync(cacheKey, async () =>
+            {
+                _logger.LogInformation("Getting popular movies (Page {Page}, Language: {Language}, Region: {Region})", page, language, region);
+                
+                var url = $"{BaseUrl}/movie/popular?api_key={_apiKey}&page={page}&language={language}&region={region}";
+                var response = await _httpClient.GetAsync(url);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Failed to get popular movies. Status: {StatusCode}", response.StatusCode);
+                    return Enumerable.Empty<JObject>();
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                var result = JObject.Parse(content);
+                var results = result["results"]?.ToObject<JArray>() ?? new JArray();
+                
+                return results.Cast<JObject>().Select(movie =>
+                {
+                    movie["media_type"] = "movie";
+                    return movie;
+                }).ToList();
+            }, TimeSpan.FromHours(6)); // Cache popular content for 6 hours
+
+            return cachedResults ?? Enumerable.Empty<JObject>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting popular movies");
+            return Enumerable.Empty<JObject>();
+        }
+    }
+
+    /// <summary>
+    /// Gets popular TV shows.
+    /// </summary>
+    /// <param name="page">The page number (default: 1).</param>
+    /// <param name="language">The language (default: en-US).</param>
+    /// <returns>A collection of popular TV shows.</returns>
+    public async Task<IEnumerable<JObject>> GetPopularTVShowsAsync(int page = 1, string language = DefaultLanguage)
+    {
+        if (string.IsNullOrWhiteSpace(_apiKey))
+        {
+            _logger.LogError("TMDB API key is not configured");
+            return Enumerable.Empty<JObject>();
+        }
+
+        var cacheKey = $"tmdb_popular_tv_{page}_{language}";
+
+        try
+        {
+            var cachedResults = await _cacheService.GetOrCreateAsync(cacheKey, async () =>
+            {
+                _logger.LogInformation("Getting popular TV shows (Page {Page}, Language: {Language})", page, language);
+                
+                var url = $"{BaseUrl}/tv/popular?api_key={_apiKey}&page={page}&language={language}";
+                var response = await _httpClient.GetAsync(url);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Failed to get popular TV shows. Status: {StatusCode}", response.StatusCode);
+                    return Enumerable.Empty<JObject>();
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                var result = JObject.Parse(content);
+                var results = result["results"]?.ToObject<JArray>() ?? new JArray();
+                
+                return results.Cast<JObject>().Select(tv =>
+                {
+                    tv["media_type"] = "tv";
+                    return tv;
+                }).ToList();
+            }, TimeSpan.FromHours(6)); // Cache popular content for 6 hours
+
+            return cachedResults ?? Enumerable.Empty<JObject>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting popular TV shows");
+            return Enumerable.Empty<JObject>();
+        }
+    }
+
+    /// <summary>
     /// Gets detailed information about a movie.
     /// </summary>
     /// <param name="tmdbId">The TMDB movie ID.</param>
+    /// <param name="language">The language (default: en-US).</param>
     /// <returns>Detailed movie information.</returns>
-    public async Task<JObject?> GetMovieDetailsAsync(int tmdbId)
+    public async Task<JObject?> GetMovieDetailsAsync(int tmdbId, string language = DefaultLanguage)
     {
         if (string.IsNullOrWhiteSpace(_apiKey))
         {
@@ -115,16 +362,16 @@ public class TMDBService
         }
 
         // Create cache key
-        var cacheKey = $"tmdb_movie_details_{tmdbId}";
+        var cacheKey = $"tmdb_movie_details_{tmdbId}_{language}";
 
         try
         {
             // Try to get from cache first
             var cachedMovie = await _cacheService.GetOrCreateAsync(cacheKey, async () =>
             {
-                _logger.LogInformation("Fetching movie details for ID: {TmdbId}", tmdbId);
+                _logger.LogInformation("Fetching movie details for ID: {TmdbId} (Language: {Language})", tmdbId, language);
                 
-                var url = $"{BaseUrl}/movie/{tmdbId}?api_key={_apiKey}&append_to_response=credits,videos,external_ids";
+                var url = $"{BaseUrl}/movie/{tmdbId}?api_key={_apiKey}&language={language}&append_to_response=credits,videos,external_ids,recommendations";
                 var response = await _httpClient.GetAsync(url);
                 
                 if (!response.IsSuccessStatusCode)
@@ -153,8 +400,9 @@ public class TMDBService
     /// Gets detailed information about a TV show.
     /// </summary>
     /// <param name="tmdbId">The TMDB TV show ID.</param>
+    /// <param name="language">The language (default: en-US).</param>
     /// <returns>Detailed TV show information.</returns>
-    public async Task<JObject?> GetTVShowDetailsAsync(int tmdbId)
+    public async Task<JObject?> GetTVShowDetailsAsync(int tmdbId, string language = DefaultLanguage)
     {
         if (string.IsNullOrWhiteSpace(_apiKey))
         {
@@ -163,16 +411,16 @@ public class TMDBService
         }
 
         // Create cache key
-        var cacheKey = $"tmdb_tv_details_{tmdbId}";
+        var cacheKey = $"tmdb_tv_details_{tmdbId}_{language}";
 
         try
         {
             // Try to get from cache first
             var cachedTVShow = await _cacheService.GetOrCreateAsync(cacheKey, async () =>
             {
-                _logger.LogInformation("Fetching TV show details for ID: {TmdbId}", tmdbId);
+                _logger.LogInformation("Fetching TV show details for ID: {TmdbId} (Language: {Language})", tmdbId, language);
                 
-                var url = $"{BaseUrl}/tv/{tmdbId}?api_key={_apiKey}&append_to_response=credits,videos,external_ids";
+                var url = $"{BaseUrl}/tv/{tmdbId}?api_key={_apiKey}&language={language}&append_to_response=credits,videos,external_ids,recommendations";
                 var response = await _httpClient.GetAsync(url);
                 
                 if (!response.IsSuccessStatusCode)
@@ -197,9 +445,9 @@ public class TMDBService
         }
     }
 
-    private async Task<IEnumerable<JObject>> SearchMoviesAsync(string query, int page)
+    private async Task<IEnumerable<JObject>> SearchMoviesAsync(string query, int page, string language, string region)
     {
-        var url = $"{BaseUrl}/search/movie?api_key={_apiKey}&query={Uri.EscapeDataString(query)}&page={page}";
+        var url = $"{BaseUrl}/search/movie?api_key={_apiKey}&query={Uri.EscapeDataString(query)}&page={page}&language={language}&region={region}";
         var response = await _httpClient.GetAsync(url);
         
         if (!response.IsSuccessStatusCode)
@@ -219,9 +467,9 @@ public class TMDBService
         });
     }
 
-    private async Task<IEnumerable<JObject>> SearchTVShowsAsync(string query, int page)
+    private async Task<IEnumerable<JObject>> SearchTVShowsAsync(string query, int page, string language, string region)
     {
-        var url = $"{BaseUrl}/search/tv?api_key={_apiKey}&query={Uri.EscapeDataString(query)}&page={page}";
+        var url = $"{BaseUrl}/search/tv?api_key={_apiKey}&query={Uri.EscapeDataString(query)}&page={page}&language={language}";
         var response = await _httpClient.GetAsync(url);
         
         if (!response.IsSuccessStatusCode)

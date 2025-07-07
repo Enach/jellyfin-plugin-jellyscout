@@ -268,10 +268,101 @@
             background: #7B1FA2;
         }
 
+        .sonarr-btn {
+            background: #35C5F0;
+            color: white;
+        }
+
+        .sonarr-btn:hover {
+            background: #2BA6D3;
+        }
+
+        .radarr-btn {
+            background: #FFC107;
+            color: white;
+        }
+
+        .radarr-btn:hover {
+            background: #E0A800;
+        }
+
         .action-btn:disabled {
             background: #666;
             cursor: not-allowed;
             opacity: 0.5;
+        }
+
+        /* Status display styles */
+        .download-status {
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+
+        .status-loading {
+            color: #666;
+            font-style: italic;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .status-badge .status-icon {
+            font-size: 1.1em;
+        }
+
+        .status-badge .status-message {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-left: 5px;
+        }
+
+        .status-wanted {
+            background: #FFF3CD;
+            color: #856404;
+            border: 1px solid #FFEAA7;
+        }
+
+        .status-downloading {
+            background: #D4E8FC;
+            color: #0066CC;
+            border: 1px solid #74B9FF;
+        }
+
+        .status-downloaded {
+            background: #D4EDDA;
+            color: #155724;
+            border: 1px solid #00B894;
+        }
+
+        .status-partial {
+            background: #E2E3E5;
+            color: #495057;
+            border: 1px solid #6C757D;
+        }
+
+        .status-failed {
+            background: #F8D7DA;
+            color: #721C24;
+            border: 1px solid #D63031;
+        }
+
+        .status-not-monitored {
+            background: #F4F4F4;
+            color: #6C757D;
+            border: 1px solid #CED4DA;
+        }
+
+        .status-unknown {
+            background: #FFF3CD;
+            color: #856404;
+            border: 1px solid #FFEAA7;
         }
 
         .notification {

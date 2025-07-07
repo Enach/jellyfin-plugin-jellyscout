@@ -165,12 +165,17 @@ class JellyScout {
         results.forEach(item => {
             const card = this.createResultCard(item);
             container.appendChild(card);
+            
+            // Check download status for each item
+            this.checkDownloadStatus(item.tmdbId, item.mediaType || 'movie');
         });
     }
 
     createResultCard(item) {
         const card = document.createElement('div');
         card.className = `result-card ${item.alreadyInLibrary ? 'in-library' : ''}`;
+        card.dataset.tmdbId = item.tmdbId;
+        card.dataset.mediaType = item.mediaType || 'movie';
 
         const title = item.title || 'Unknown Title';
         const year = item.year || 'Unknown';
@@ -191,10 +196,21 @@ class JellyScout {
                 </div>
             </div>
             <div class="result-overview">${this.escapeHtml(overview)}</div>
+            <div class="download-status" id="status-${item.tmdbId}">
+                <div class="status-loading">Checking status...</div>
+            </div>
             <div class="result-actions">
                 <button class="action-btn details-btn" onclick="jellyScout.showDetails(${item.tmdbId}, '${mediaType}')">
                     Details
                 </button>
+                ${mediaType === 'tv' && !item.alreadyInLibrary ? `
+                <button class="action-btn sonarr-btn" onclick="jellyScout.addToSonarr('${this.escapeHtml(title)}', ${item.tmdbId}, ${item.year})">
+                    Add to Sonarr
+                </button>` : ''}
+                ${mediaType === 'movie' && !item.alreadyInLibrary ? `
+                <button class="action-btn radarr-btn" onclick="jellyScout.addToRadarr('${this.escapeHtml(title)}', ${item.tmdbId}, ${item.year})">
+                    Add to Radarr
+                </button>` : ''}
                 <button class="action-btn stream-btn" onclick="jellyScout.searchTorrents('${this.escapeHtml(title)}', ${item.year}, '${mediaType}')" 
                         ${item.alreadyInLibrary ? 'disabled' : ''}>
                     Stream
@@ -358,6 +374,157 @@ class JellyScout {
         } catch (error) {
             console.error('Download failed:', error);
             this.showNotification(`Download failed: ${error.message}`, 'error');
+        }
+    }
+
+    async addToSonarr(title, tmdbId, year) {
+        try {
+            this.showNotification(`Adding to Sonarr: ${title}`, 'info');
+            
+            const response = await fetch('/jellyscout/sonarr/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: title,
+                    tmdbId: tmdbId,
+                    year: year
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            this.showNotification(`Added to Sonarr: ${title}`, 'success');
+            
+            // Refresh the status after adding
+            setTimeout(() => {
+                this.checkDownloadStatus(tmdbId, 'tv');
+            }, 1000);
+        } catch (error) {
+            console.error('Failed to add to Sonarr:', error);
+            this.showNotification(`Failed to add to Sonarr: ${error.message}`, 'error');
+        }
+    }
+
+    async addToRadarr(title, tmdbId, year) {
+        try {
+            this.showNotification(`Adding to Radarr: ${title}`, 'info');
+            
+            const response = await fetch('/jellyscout/radarr/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: title,
+                    tmdbId: tmdbId,
+                    year: year
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            this.showNotification(`Added to Radarr: ${title}`, 'success');
+            
+            // Refresh the status after adding
+            setTimeout(() => {
+                this.checkDownloadStatus(tmdbId, 'movie');
+            }, 1000);
+        } catch (error) {
+            console.error('Failed to add to Radarr:', error);
+            this.showNotification(`Failed to add to Radarr: ${error.message}`, 'error');
+        }
+    }
+
+    async checkDownloadStatus(tmdbId, mediaType) {
+        try {
+            const service = mediaType === 'tv' ? 'sonarr' : 'radarr';
+            const response = await fetch(`/jellyscout/${service}/status/${tmdbId}`);
+            
+            if (!response.ok) {
+                // If status check fails, just hide the loading indicator
+                this.updateStatusDisplay(tmdbId, { status: 'NotInSystem', message: '' });
+                return;
+            }
+
+            const status = await response.json();
+            this.updateStatusDisplay(tmdbId, status);
+        } catch (error) {
+            console.error('Failed to check download status:', error);
+            // Hide loading indicator on error
+            this.updateStatusDisplay(tmdbId, { status: 'NotInSystem', message: '' });
+        }
+    }
+
+    updateStatusDisplay(tmdbId, status) {
+        const statusElement = document.getElementById(`status-${tmdbId}`);
+        if (!statusElement) return;
+
+        let statusClass = 'status-not-in-system';
+        let statusText = '';
+        let statusIcon = '';
+
+        switch (status.status) {
+            case 'NotInSystem':
+                statusClass = 'status-not-in-system';
+                statusText = '';
+                statusIcon = '';
+                break;
+            case 'Wanted':
+                statusClass = 'status-wanted';
+                statusText = '⏳ Wanted';
+                statusIcon = '⏳';
+                break;
+            case 'Downloading':
+                statusClass = 'status-downloading';
+                statusText = `📥 Downloading (${status.progress}%)`;
+                statusIcon = '📥';
+                break;
+            case 'Downloaded':
+                statusClass = 'status-downloaded';
+                statusText = '✅ Downloaded';
+                statusIcon = '✅';
+                break;
+            case 'PartiallyDownloaded':
+                statusClass = 'status-partial';
+                statusText = `🔄 Partial (${status.progress}%)`;
+                statusIcon = '🔄';
+                break;
+            case 'Failed':
+                statusClass = 'status-failed';
+                statusText = '❌ Failed';
+                statusIcon = '❌';
+                break;
+            case 'NotMonitored':
+                statusClass = 'status-not-monitored';
+                statusText = '⏸️ Not Monitored';
+                statusIcon = '⏸️';
+                break;
+            default:
+                statusClass = 'status-unknown';
+                statusText = '❓ Unknown';
+                statusIcon = '❓';
+        }
+
+        if (statusText) {
+            statusElement.innerHTML = `
+                <div class="status-badge ${statusClass}">
+                    <span class="status-icon">${statusIcon}</span>
+                    <span class="status-text">${statusText}</span>
+                    ${status.message ? `<span class="status-message">${status.message}</span>` : ''}
+                </div>
+            `;
+        } else {
+            statusElement.innerHTML = ''; // Hide status if not in system
         }
     }
 
