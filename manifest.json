@@ -9,12 +9,20 @@
     "category": "General",
     "versions": [
       {
+        "version": "0.1.7.0",
+        "changelog": "🔧 Configuration Page Fixes:\n\n• Fixed configuration page save button not working properly\n• Changed form to use Jellyfin's built-in configuration system\n• Changed Prowlarr API Key from password field to text field for better UX\n• Improved form structure with proper submit handling\n• Enhanced configuration loading and saving reliability\n• Fixed page refresh issues when saving settings\n• Better error handling for configuration operations\n\nThis version addresses critical issues with the plugin settings page that prevented users from saving their configuration properly.",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.1.7/jellyscout-0.1.7.0.zip",
+        "checksum": "e3baa589bf11a5c2f9ce9aae95bdf67c",
+        "timestamp": "2024-12-20T15:30:00Z"
+      },
+      {
         "version": "0.1.6.0",
-        "changelog": "🔧 CONFIGURATION PAGE FIXES\n\n✅ BUG FIXES:\n• Fixed configuration page settings not saving properly\n• Fixed form submission causing page refresh and data loss\n• Changed Prowlarr API Key from password field to text field for better UX\n• Improved form handling with proper event handling\n• Enhanced configuration validation and error handling\n\n🎯 IMPROVEMENTS:\n• Better user experience when configuring plugin settings\n• Settings now persist correctly when saving\n• API keys are more visible for easier configuration\n• Reduced form submission errors\n• Cleaner configuration interface\n\nThis is a bug fix release that addresses issues users were experiencing with the configuration page where settings would not save and data would be lost on page refresh.",
-        "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://github.com/Enach/jellyfin-plugin-jellyscout/releases/download/v0.1.6/jellyscout-0.1.6.0.zip",
-        "checksum": "5e9c1eb0532fe61b8f77651a209fd367",
-        "timestamp": "2025-01-08T16:00:00Z"
+        "changelog": "🔧 Configuration Page Fixes:\n\n• Fixed configuration page settings not saving properly\n• Fixed form submission causing page refresh and data loss\n• Changed Prowlarr API Key from password to text field for better UX\n• Improved form handling with proper event handling\n• Enhanced configuration validation and error handling\n• Better user experience when configuring plugin settings\n• Settings now persist correctly when saving\n• API keys are more visible for easier configuration\n• Reduced form submission errors\n\nThis is a bug fix release addressing configuration issues reported by users.",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.1.6/jellyscout-0.1.6.0.zip",
+        "checksum": "5e9c1eb0532fe61b8f77651a209fd36a",
+        "timestamp": "2024-12-20T15:00:00Z"
       },
       {
         "version": "0.1.5.0",

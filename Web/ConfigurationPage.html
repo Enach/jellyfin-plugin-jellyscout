@@ -9,115 +9,123 @@
     <div data-role="page" class="page type-interior configurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
         <div data-role="content">
             <div class="content-primary">
-                <form class="jellyscoutConfigForm">
-                    <div class="sectionTitleContainer flex align-items-center">
-                        <h2 class="sectionTitle">JellyScout Configuration</h2>
-                    </div>
-                    
-                    <div class="checkboxContainer checkboxContainer-withDescription">
-                        <label>
-                            <input type="checkbox" is="emby-checkbox" id="EnableStreaming" />
-                            <span>Enable Streaming</span>
-                        </label>
-                        <div class="fieldDescription">Allow users to stream content directly from torrents</div>
-                    </div>
-                    
-                    <div class="checkboxContainer checkboxContainer-withDescription">
-                        <label>
-                            <input type="checkbox" is="emby-checkbox" id="EnableDownloads" />
-                            <span>Enable Downloads</span>
-                        </label>
-                        <div class="fieldDescription">Allow users to download content via external services</div>
-                    </div>
-                    
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="TmdbApiKey">TMDB API Key</label>
-                        <input is="emby-input" type="text" id="TmdbApiKey" name="TmdbApiKey" />
-                        <div class="fieldDescription">Get your free API key from <a href="https://www.themoviedb.org/settings/api" target="_blank">TMDB</a></div>
-                    </div>
-                    
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="MaxSearchResults">Max Search Results</label>
-                        <input is="emby-input" type="number" id="MaxSearchResults" name="MaxSearchResults" min="10" max="100" />
-                        <div class="fieldDescription">Maximum number of search results to return (10-100)</div>
-                    </div>
-                    
-                    <div class="selectContainer">
-                        <label class="selectLabel" for="DefaultQuality">Default Quality</label>
-                        <select is="emby-select" id="DefaultQuality" name="DefaultQuality">
-                            <option value="480p">480p</option>
-                            <option value="720p">720p</option>
-                            <option value="1080p">1080p</option>
-                            <option value="4K">4K</option>
-                        </select>
-                        <div class="fieldDescription">Default quality preference for streaming and downloads</div>
-                    </div>
-                    
-                    <h3 class="sectionTitle">External Services</h3>
-                    
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="SonarrServerUrl">Sonarr Server URL</label>
-                        <input is="emby-input" type="text" id="SonarrServerUrl" name="SonarrServerUrl" placeholder="http://localhost:8989" />
-                        <div class="fieldDescription">URL of your Sonarr instance (optional)</div>
-                    </div>
-                    
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="SonarrApiKey">Sonarr API Key</label>
-                        <input is="emby-input" type="text" id="SonarrApiKey" name="SonarrApiKey" />
-                        <div class="fieldDescription">Found in Sonarr Settings > General > Security (optional)</div>
-                    </div>
-                    
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="RadarrServerUrl">Radarr Server URL</label>
-                        <input is="emby-input" type="text" id="RadarrServerUrl" name="RadarrServerUrl" placeholder="http://localhost:7878" />
-                        <div class="fieldDescription">URL of your Radarr instance (optional)</div>
-                    </div>
-                    
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="RadarrApiKey">Radarr API Key</label>
-                        <input is="emby-input" type="text" id="RadarrApiKey" name="RadarrApiKey" />
-                        <div class="fieldDescription">Found in Radarr Settings > General > Security (optional)</div>
-                    </div>
-                    
-                    <h3 class="sectionTitle">Streaming Services</h3>
-                    
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="ProwlarrServerUrl">Prowlarr Server URL</label>
-                        <input is="emby-input" type="text" id="ProwlarrServerUrl" name="ProwlarrServerUrl" placeholder="http://localhost:9696" />
-                        <div class="fieldDescription">URL of your Prowlarr instance for torrent search</div>
-                    </div>
-                    
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="ProwlarrApiKey">Prowlarr API Key</label>
-                        <input is="emby-input" type="text" id="ProwlarrApiKey" name="ProwlarrApiKey" />
-                        <div class="fieldDescription">Found in Prowlarr Settings > General > Security (for streaming)</div>
-                    </div>
-                    
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="MinSeeders">Minimum Seeders for Streaming</label>
-                        <input is="emby-input" type="number" id="MinSeeders" name="MinSeeders" min="1" max="100" value="10" />
-                        <div class="fieldDescription">Minimum number of seeders required to show streaming option</div>
-                    </div>
-                    
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="BitPlayServerUrl">BitPlay Server URL</label>
-                        <input is="emby-input" type="text" id="BitPlayServerUrl" name="BitPlayServerUrl" placeholder="http://localhost:3347" />
-                        <div class="fieldDescription">URL of your BitPlay streaming server</div>
-                    </div>
-                    
-                    <div class="checkboxContainer checkboxContainer-withDescription">
-                        <label>
-                            <input type="checkbox" is="emby-checkbox" id="EnableNotifications" />
-                            <span>Enable Notifications</span>
-                        </label>
-                        <div class="fieldDescription">Show real-time notifications for downloads and streaming</div>
-                    </div>
-                    
-                    <br />
-                    <div>
-                        <button is="emby-button" type="button" class="raised button-submit block" id="saveButton">
-                            <span>Save</span>
-                        </button>
+                <form id="jellyscoutConfigForm" class="esqConfigurationForm">
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <div class="sectionTitleContainer flex align-items-center">
+                            <h2 class="sectionTitle">JellyScout Configuration</h2>
+                        </div>
+                        
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" id="EnableStreaming" name="EnableStreaming" data-embycheckbox="true" class="emby-checkbox">
+                                <span class="checkboxLabel">Enable Streaming</span>
+                                <span class="checkboxOutline"><span class="material-icons checkboxIcon checkboxIcon-checked check" aria-hidden="true"></span><span class="material-icons checkboxIcon checkboxIcon-unchecked" aria-hidden="true"></span></span>
+                            </label>
+                            <div class="fieldDescription">Allow users to stream content directly from torrents</div>
+                        </div>
+                        
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" id="EnableDownloads" name="EnableDownloads" data-embycheckbox="true" class="emby-checkbox">
+                                <span class="checkboxLabel">Enable Downloads</span>
+                                <span class="checkboxOutline"><span class="material-icons checkboxIcon checkboxIcon-checked check" aria-hidden="true"></span><span class="material-icons checkboxIcon checkboxIcon-unchecked" aria-hidden="true"></span></span>
+                            </label>
+                            <div class="fieldDescription">Allow users to download content via external services</div>
+                        </div>
+                        
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="TmdbApiKey">TMDB API Key:</label>
+                            <input is="emby-input" type="text" id="TmdbApiKey" name="TmdbApiKey" label="TMDB API Key:" class="emby-input">
+                            <div class="fieldDescription">Get your free API key from <a href="https://www.themoviedb.org/settings/api" target="_blank">TMDB</a></div>
+                        </div>
+                        
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="MaxSearchResults">Max Search Results:</label>
+                            <input is="emby-input" type="number" id="MaxSearchResults" name="MaxSearchResults" min="10" max="100" label="Max Search Results:" class="emby-input">
+                            <div class="fieldDescription">Maximum number of search results to return (10-100)</div>
+                        </div>
+                        
+                        <div class="selectContainer">
+                            <label class="selectLabel" for="DefaultQuality">Default Quality:</label>
+                            <select is="emby-select" id="DefaultQuality" name="DefaultQuality" label="Default Quality:" class="emby-select-withcolor emby-select">
+                                <option value="480p">480p</option>
+                                <option value="720p">720p</option>
+                                <option value="1080p">1080p</option>
+                                <option value="4K">4K</option>
+                            </select>
+                            <div class="selectArrowContainer"><div style="visibility:hidden;display:none;">0</div><span class="selectArrow material-icons keyboard_arrow_down" aria-hidden="true"></span></div>
+                            <div class="fieldDescription">Default quality preference for streaming and downloads</div>
+                        </div>
+                        
+                        <h3 class="sectionTitle">External Services</h3>
+                        
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="SonarrServerUrl">Sonarr Server URL:</label>
+                            <input is="emby-input" type="text" id="SonarrServerUrl" name="SonarrServerUrl" placeholder="http://localhost:8989" label="Sonarr Server URL:" class="emby-input">
+                            <div class="fieldDescription">URL of your Sonarr instance (optional)</div>
+                        </div>
+                        
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="SonarrApiKey">Sonarr API Key:</label>
+                            <input is="emby-input" type="text" id="SonarrApiKey" name="SonarrApiKey" label="Sonarr API Key:" class="emby-input">
+                            <div class="fieldDescription">Found in Sonarr Settings > General > Security (optional)</div>
+                        </div>
+                        
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="RadarrServerUrl">Radarr Server URL:</label>
+                            <input is="emby-input" type="text" id="RadarrServerUrl" name="RadarrServerUrl" placeholder="http://localhost:7878" label="Radarr Server URL:" class="emby-input">
+                            <div class="fieldDescription">URL of your Radarr instance (optional)</div>
+                        </div>
+                        
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="RadarrApiKey">Radarr API Key:</label>
+                            <input is="emby-input" type="text" id="RadarrApiKey" name="RadarrApiKey" label="Radarr API Key:" class="emby-input">
+                            <div class="fieldDescription">Found in Radarr Settings > General > Security (optional)</div>
+                        </div>
+                        
+                        <h3 class="sectionTitle">Streaming Services</h3>
+                        
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="ProwlarrServerUrl">Prowlarr Server URL:</label>
+                            <input is="emby-input" type="text" id="ProwlarrServerUrl" name="ProwlarrServerUrl" placeholder="http://localhost:9696" label="Prowlarr Server URL:" class="emby-input">
+                            <div class="fieldDescription">URL of your Prowlarr instance for torrent search</div>
+                        </div>
+                        
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="ProwlarrApiKey">Prowlarr API Key:</label>
+                            <input is="emby-input" type="text" id="ProwlarrApiKey" name="ProwlarrApiKey" label="Prowlarr API Key:" class="emby-input">
+                            <div class="fieldDescription">Found in Prowlarr Settings > General > Security (for streaming)</div>
+                        </div>
+                        
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="MinSeeders">Minimum Seeders for Streaming:</label>
+                            <input is="emby-input" type="number" id="MinSeeders" name="MinSeeders" min="1" max="100" value="10" label="Minimum Seeders for Streaming:" class="emby-input">
+                            <div class="fieldDescription">Minimum number of seeders required to show streaming option</div>
+                        </div>
+                        
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="BitPlayServerUrl">BitPlay Server URL:</label>
+                            <input is="emby-input" type="text" id="BitPlayServerUrl" name="BitPlayServerUrl" placeholder="http://localhost:3347" label="BitPlay Server URL:" class="emby-input">
+                            <div class="fieldDescription">URL of your BitPlay streaming server</div>
+                        </div>
+                        
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" id="EnableNotifications" name="EnableNotifications" data-embycheckbox="true" class="emby-checkbox">
+                                <span class="checkboxLabel">Enable Notifications</span>
+                                <span class="checkboxOutline"><span class="material-icons checkboxIcon checkboxIcon-checked check" aria-hidden="true"></span><span class="material-icons checkboxIcon checkboxIcon-unchecked" aria-hidden="true"></span></span>
+                            </label>
+                            <div class="fieldDescription">Show real-time notifications for downloads and streaming</div>
+                        </div>
+                        
+                        <div>
+                            <button is="emby-button" type="submit" data-theme="b" class="raised button-submit block emby-button">
+                                <span>Save</span>
+                            </button>
+                            <button is="emby-button" type="button" class="raised button-cancel block btnCancel emby-button" onclick="history.back();">
+                                <span>Cancel</span>
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -125,139 +133,115 @@
     </div>
 
     <script type="text/javascript">
-        // Simple configuration page using Jellyfin's built-in APIs
+        // JellyScout Configuration - works with Jellyfin's built-in configuration system
         (function () {
             const pluginId = "a8b4d8c6-3f2a-4d7e-9b1c-5e8f2a9d3c7b";
+            const form = document.getElementById('jellyscoutConfigForm');
 
-            function loadPage() {
+            // Load configuration into form
+            function loadConfiguration() {
                 Dashboard.showLoadingMsg();
-
+                
                 ApiClient.getPluginConfiguration(pluginId).then(function (config) {
-                    // Load configuration values
-                    document.querySelector('#EnableStreaming').checked = config.EnableStreaming || false;
-                    document.querySelector('#EnableDownloads').checked = config.EnableDownloads || false;
-                    document.querySelector('#TmdbApiKey').value = config.TmdbApiKey || '';
-                    document.querySelector('#MaxSearchResults').value = config.MaxSearchResults || 50;
-                    document.querySelector('#DefaultQuality').value = config.DefaultQuality || '1080p';
-                    document.querySelector('#EnableNotifications').checked = config.EnableNotifications || false;
-                    
-                    // Load external service configurations
+                    // Load simple properties
+                    document.getElementById('EnableStreaming').checked = config.EnableStreaming || false;
+                    document.getElementById('EnableDownloads').checked = config.EnableDownloads || false;
+                    document.getElementById('TmdbApiKey').value = config.TmdbApiKey || '';
+                    document.getElementById('MaxSearchResults').value = config.MaxSearchResults || 50;
+                    document.getElementById('DefaultQuality').value = config.DefaultQuality || '1080p';
+                    document.getElementById('EnableNotifications').checked = config.EnableNotifications || false;
+
+                    // Load Sonarr configuration
                     if (config.SonarrConfig) {
-                        document.querySelector('#SonarrServerUrl').value = config.SonarrConfig.ServerUrl || '';
-                        document.querySelector('#SonarrApiKey').value = config.SonarrConfig.ApiKey || '';
+                        document.getElementById('SonarrServerUrl').value = config.SonarrConfig.ServerUrl || '';
+                        document.getElementById('SonarrApiKey').value = config.SonarrConfig.ApiKey || '';
                     }
-                    
+
+                    // Load Radarr configuration
                     if (config.RadarrConfig) {
-                        document.querySelector('#RadarrServerUrl').value = config.RadarrConfig.ServerUrl || '';
-                        document.querySelector('#RadarrApiKey').value = config.RadarrConfig.ApiKey || '';
+                        document.getElementById('RadarrServerUrl').value = config.RadarrConfig.ServerUrl || '';
+                        document.getElementById('RadarrApiKey').value = config.RadarrConfig.ApiKey || '';
                     }
-                    
+
                     // Load Prowlarr configuration
                     if (config.ProwlarrConfig) {
-                        document.querySelector('#ProwlarrServerUrl').value = config.ProwlarrConfig.ServerUrl || '';
-                        document.querySelector('#ProwlarrApiKey').value = config.ProwlarrConfig.ApiKey || '';
-                        document.querySelector('#MinSeeders').value = config.ProwlarrConfig.MinSeeders || 10;
+                        document.getElementById('ProwlarrServerUrl').value = config.ProwlarrConfig.ServerUrl || '';
+                        document.getElementById('ProwlarrApiKey').value = config.ProwlarrConfig.ApiKey || '';
+                        document.getElementById('MinSeeders').value = config.ProwlarrConfig.MinSeeders || 10;
                     }
-                    
+
                     // Load BitPlay configuration
                     if (config.BitPlayConfig) {
-                        document.querySelector('#BitPlayServerUrl').value = config.BitPlayConfig.ServerUrl || 'http://localhost:3347';
+                        document.getElementById('BitPlayServerUrl').value = config.BitPlayConfig.ServerUrl || 'http://localhost:3347';
                     }
 
                     Dashboard.hideLoadingMsg();
                 }).catch(function (error) {
                     Dashboard.hideLoadingMsg();
                     console.error('Error loading configuration:', error);
-                    require(['toast'], function (toast) {
-                        toast('Error loading configuration: ' + error.message);
-                    });
                 });
             }
 
+            // Save configuration from form
             function saveConfiguration() {
                 Dashboard.showLoadingMsg();
 
-                // Get current configuration
                 ApiClient.getPluginConfiguration(pluginId).then(function (config) {
-                    // Update configuration values
-                    config.EnableStreaming = document.querySelector('#EnableStreaming').checked;
-                    config.EnableDownloads = document.querySelector('#EnableDownloads').checked;
-                    config.TmdbApiKey = document.querySelector('#TmdbApiKey').value;
-                    config.MaxSearchResults = parseInt(document.querySelector('#MaxSearchResults').value) || 50;
-                    config.DefaultQuality = document.querySelector('#DefaultQuality').value;
-                    config.EnableNotifications = document.querySelector('#EnableNotifications').checked;
-                    
-                    // Update external service configurations
+                    // Save simple properties
+                    config.EnableStreaming = document.getElementById('EnableStreaming').checked;
+                    config.EnableDownloads = document.getElementById('EnableDownloads').checked;
+                    config.TmdbApiKey = document.getElementById('TmdbApiKey').value;
+                    config.MaxSearchResults = parseInt(document.getElementById('MaxSearchResults').value) || 50;
+                    config.DefaultQuality = document.getElementById('DefaultQuality').value;
+                    config.EnableNotifications = document.getElementById('EnableNotifications').checked;
+
+                    // Save Sonarr configuration
                     config.SonarrConfig = config.SonarrConfig || {};
-                    config.SonarrConfig.ServerUrl = document.querySelector('#SonarrServerUrl').value;
-                    config.SonarrConfig.ApiKey = document.querySelector('#SonarrApiKey').value;
+                    config.SonarrConfig.ServerUrl = document.getElementById('SonarrServerUrl').value;
+                    config.SonarrConfig.ApiKey = document.getElementById('SonarrApiKey').value;
                     config.SonarrConfig.Enabled = !!(config.SonarrConfig.ServerUrl && config.SonarrConfig.ApiKey);
-                    
+
+                    // Save Radarr configuration
                     config.RadarrConfig = config.RadarrConfig || {};
-                    config.RadarrConfig.ServerUrl = document.querySelector('#RadarrServerUrl').value;
-                    config.RadarrConfig.ApiKey = document.querySelector('#RadarrApiKey').value;
+                    config.RadarrConfig.ServerUrl = document.getElementById('RadarrServerUrl').value;
+                    config.RadarrConfig.ApiKey = document.getElementById('RadarrApiKey').value;
                     config.RadarrConfig.Enabled = !!(config.RadarrConfig.ServerUrl && config.RadarrConfig.ApiKey);
-                    
-                    // Update Prowlarr configuration
+
+                    // Save Prowlarr configuration
                     config.ProwlarrConfig = config.ProwlarrConfig || {};
-                    config.ProwlarrConfig.ServerUrl = document.querySelector('#ProwlarrServerUrl').value;
-                    config.ProwlarrConfig.ApiKey = document.querySelector('#ProwlarrApiKey').value;
-                    config.ProwlarrConfig.MinSeeders = parseInt(document.querySelector('#MinSeeders').value) || 10;
+                    config.ProwlarrConfig.ServerUrl = document.getElementById('ProwlarrServerUrl').value;
+                    config.ProwlarrConfig.ApiKey = document.getElementById('ProwlarrApiKey').value;
+                    config.ProwlarrConfig.MinSeeders = parseInt(document.getElementById('MinSeeders').value) || 10;
                     config.ProwlarrConfig.Enabled = !!(config.ProwlarrConfig.ServerUrl && config.ProwlarrConfig.ApiKey);
-                    
-                    // Update BitPlay configuration
+
+                    // Save BitPlay configuration
                     config.BitPlayConfig = config.BitPlayConfig || {};
-                    config.BitPlayConfig.ServerUrl = document.querySelector('#BitPlayServerUrl').value || 'http://localhost:3347';
+                    config.BitPlayConfig.ServerUrl = document.getElementById('BitPlayServerUrl').value || 'http://localhost:3347';
                     config.BitPlayConfig.Enabled = !!(config.BitPlayConfig.ServerUrl);
 
-                    // Save configuration
                     return ApiClient.updatePluginConfiguration(pluginId, config);
                 }).then(function () {
                     Dashboard.hideLoadingMsg();
-                    require(['toast'], function (toast) {
-                        toast('Settings saved successfully!');
-                    });
                     Dashboard.processPluginConfigurationUpdateResult();
                 }).catch(function (error) {
                     Dashboard.hideLoadingMsg();
                     console.error('Error saving configuration:', error);
-                    require(['toast'], function (toast) {
-                        toast('Error saving configuration: ' + error.message);
-                    });
                 });
             }
 
-            // Event listeners
-            document.addEventListener('DOMContentLoaded', function() {
-                // Save button click handler
-                const saveButton = document.querySelector('#saveButton');
-                if (saveButton) {
-                    saveButton.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        saveConfiguration();
-                        return false;
-                    });
-                }
-
-                // Form submit handler (backup)
-                const form = document.querySelector('.jellyscoutConfigForm');
-                if (form) {
-                    form.addEventListener('submit', function (e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        saveConfiguration();
-                        return false;
-                    });
-                }
+            // Handle form submission
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                saveConfiguration();
+                return false;
             });
 
-            // Load page when ready
+            // Load configuration when page loads
             if (typeof pageClassOn !== 'undefined') {
-                pageClassOn('pageshow', "configurationPage", loadPage);
+                pageClassOn('pageshow', "configurationPage", loadConfiguration);
             } else {
-                // Fallback for when pageClassOn is not available
-                document.addEventListener('DOMContentLoaded', loadPage);
+                // Fallback
+                document.addEventListener('DOMContentLoaded', loadConfiguration);
             }
         })();
     </script>
