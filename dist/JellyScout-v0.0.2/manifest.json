@@ -1,0 +1,24 @@
+{
+  "id": "JellyScout",
+  "name": "JellyScout",
+  "version": "0.0.2",
+  "description": "Advanced movie & TV discovery plugin with streaming and download capabilities. Search TMDB, check library status, and stream or download content seamlessly with real-time notifications.",
+  "targetAbi": "10.9.0.0",
+  "framework": "net8.0",
+  "owner": "JellyScout Team",
+  "repository": "https://github.com/enach/jellyfin-plugin-jellyscout",
+  "imageUrl": "https://raw.githubusercontent.com/enach/jellyfin-plugin-jellyscout/main/icon.png",
+  "categories": [ "Catalog", "Streaming", "Downloads", "Media Discovery" ],
+  "changelog": "Major rewrite with modern UI, enhanced features, and improved reliability. Added comprehensive API integration with Streamio, Sonarr, and Radarr. Implemented advanced filtering, playlist support, and configuration validation.",
+  "overview": "🎬 Discover, stream, and download movies and TV shows directly from your Jellyfin server with JellyScout - featuring TMDB integration, real-time notifications, and a beautiful modern interface.",
+  "version_history": [
+    {
+      "version": "0.0.2",
+      "changes": "Complete rewrite with modern architecture, API integration, and enhanced features"
+    },
+    {
+      "version": "0.0.1", 
+      "changes": "Initial development version with basic TMDB integration and streaming capabilities"
+    }
+  ]
+}

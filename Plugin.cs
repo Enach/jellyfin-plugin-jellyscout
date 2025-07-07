@@ -1,0 +1,75 @@
+using System;
+using System.Collections.Generic;
+using Jellyfin.Plugin.JellyScout.Configuration;
+using MediaBrowser.Common.Configuration;
+using MediaBrowser.Common.Plugins;
+using MediaBrowser.Model.Plugins;
+using MediaBrowser.Model.Serialization;
+
+namespace Jellyfin.Plugin.JellyScout;
+
+/// <summary>
+/// The main plugin class for JellyScout.
+/// </summary>
+public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Plugin"/> class.
+    /// </summary>
+    /// <param name="applicationPaths">The application paths.</param>
+    /// <param name="xmlSerializer">The XML serializer.</param>
+    public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
+        : base(applicationPaths, xmlSerializer)
+    {
+        Instance = this;
+    }
+
+    /// <summary>
+    /// Gets the current plugin instance.
+    /// </summary>
+    public static Plugin? Instance { get; private set; }
+
+    /// <summary>
+    /// Gets the plugin name.
+    /// </summary>
+    public override string Name => "JellyScout";
+
+    /// <summary>
+    /// Gets the plugin description.
+    /// </summary>
+    public override string Description => "Search & stream or request downloads from TMDB/Stremio with real-time notifications. Seamlessly discover and access media content.";
+
+    /// <summary>
+    /// Gets the plugin ID.
+    /// </summary>
+    public override Guid Id => Guid.Parse("12345678-1234-1234-1234-123456789abc");
+
+    /// <summary>
+    /// Gets the plugin configuration pages.
+    /// </summary>
+    /// <returns>The configuration pages.</returns>
+    public IEnumerable<PluginPageInfo> GetPages()
+    {
+        return new[]
+        {
+            new PluginPageInfo
+            {
+                Name = "JellyScout",
+                EmbeddedResourcePath = string.Format(
+                    "{0}.Web.CatalogPage.html",
+                    GetType().Namespace),
+                EnableInMainMenu = true,
+                MenuSection = "server",
+                MenuIcon = "search"
+            },
+            new PluginPageInfo
+            {
+                Name = "JellyScout Configuration",
+                EmbeddedResourcePath = string.Format(
+                    "{0}.Web.ConfigurationPage.html",
+                    GetType().Namespace),
+                EnableInMainMenu = false
+            }
+        };
+    }
+}
