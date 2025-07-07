@@ -89,7 +89,7 @@
                     
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="ProwlarrApiKey">Prowlarr API Key</label>
-                        <input is="emby-input" type="password" id="ProwlarrApiKey" name="ProwlarrApiKey" />
+                        <input is="emby-input" type="text" id="ProwlarrApiKey" name="ProwlarrApiKey" />
                         <div class="fieldDescription">Found in Prowlarr Settings > General > Security (for streaming)</div>
                     </div>
                     
@@ -115,7 +115,7 @@
                     
                     <br />
                     <div>
-                        <button is="emby-button" type="submit" class="raised button-submit block">
+                        <button is="emby-button" type="button" class="raised button-submit block" id="saveButton">
                             <span>Save</span>
                         </button>
                     </div>
@@ -165,6 +165,12 @@
                     }
 
                     Dashboard.hideLoadingMsg();
+                }).catch(function (error) {
+                    Dashboard.hideLoadingMsg();
+                    console.error('Error loading configuration:', error);
+                    require(['toast'], function (toast) {
+                        toast('Error loading configuration: ' + error.message);
+                    });
                 });
             }
 
@@ -205,21 +211,54 @@
                     config.BitPlayConfig.Enabled = !!(config.BitPlayConfig.ServerUrl);
 
                     // Save configuration
-                    ApiClient.updatePluginConfiguration(pluginId, config).then(function () {
-                        Dashboard.processPluginConfigurationUpdateResult();
+                    return ApiClient.updatePluginConfiguration(pluginId, config);
+                }).then(function () {
+                    Dashboard.hideLoadingMsg();
+                    require(['toast'], function (toast) {
+                        toast('Settings saved successfully!');
+                    });
+                    Dashboard.processPluginConfigurationUpdateResult();
+                }).catch(function (error) {
+                    Dashboard.hideLoadingMsg();
+                    console.error('Error saving configuration:', error);
+                    require(['toast'], function (toast) {
+                        toast('Error saving configuration: ' + error.message);
                     });
                 });
             }
 
             // Event listeners
-            document.querySelector('.jellyscoutConfigForm').addEventListener('submit', function (e) {
-                e.preventDefault();
-                saveConfiguration();
-                return false;
+            document.addEventListener('DOMContentLoaded', function() {
+                // Save button click handler
+                const saveButton = document.querySelector('#saveButton');
+                if (saveButton) {
+                    saveButton.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        saveConfiguration();
+                        return false;
+                    });
+                }
+
+                // Form submit handler (backup)
+                const form = document.querySelector('.jellyscoutConfigForm');
+                if (form) {
+                    form.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        saveConfiguration();
+                        return false;
+                    });
+                }
             });
 
             // Load page when ready
-            pageClassOn('pageshow', "configurationPage", loadPage);
+            if (typeof pageClassOn !== 'undefined') {
+                pageClassOn('pageshow', "configurationPage", loadPage);
+            } else {
+                // Fallback for when pageClassOn is not available
+                document.addEventListener('DOMContentLoaded', loadPage);
+            }
         })();
     </script>
 </body>
