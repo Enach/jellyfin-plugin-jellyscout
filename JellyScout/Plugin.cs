@@ -12,7 +12,7 @@ using Jellyfin.Plugin.JellyScout.Services;
 
 namespace Jellyfin.Plugin.JellyScout
 {
-    public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IPluginServiceRegistrator
+    public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         public override string Name => "JellyScout";
         public override Guid Id => Guid.Parse("12345678-1234-5678-9012-123456789012");
@@ -42,7 +42,11 @@ namespace Jellyfin.Plugin.JellyScout
                 }
             };
         }
+    }
 
+    // Separate service registrator class with parameterless constructor
+    public class JellyScoutServiceRegistrator : IPluginServiceRegistrator
+    {
         public void RegisterServices(IServiceCollection serviceCollection, MediaBrowser.Controller.IServerApplicationHost applicationHost)
         {
             // Register TMDBService as a singleton
