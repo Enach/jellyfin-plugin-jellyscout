@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="JellyScout\Configuration\configPage.html" />
+    <EmbeddedResource Include="JellyScout\Web\liveTvPage.html" />
     <EmbeddedResource Include="icon.png" />
   </ItemGroup>
 

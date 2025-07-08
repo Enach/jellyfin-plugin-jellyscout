@@ -215,23 +215,36 @@ namespace Jellyfin.Plugin.JellyScout.Services
             var channels = new List<ChannelInfo>();
             
             // Since we don't have direct user context in GetChannelsAsync,
-            // we'll create a few example channels that demonstrate the concept
-            // In a real implementation, you'd query active users or use a different approach
+            // we'll create channels for known/example user IDs
+            // In a real implementation, you'd query active users from the database
             
             var exampleUserIds = new[]
             {
-                "user1", "user2", "user3", "admin", "guest"
+                // Example simple user IDs for demonstration
+                "user1", "user2", "user3", "admin", "guest",
+                
+                // Real Jellyfin user ID format (32-character hex strings)
+                "4632e69256a643c0852dad5564682c6d", // Your actual user ID -> Channel 2998
+                
+                // You can add more real user IDs here as needed
+                // "abcdef1234567890abcdef1234567890", // Another example
             };
 
             foreach (var userId in exampleUserIds)
             {
                 var channelNumber = GenerateChannelNumberFromUserId(userId);
+                
+                // Create more user-friendly display names for long user IDs
+                var displayName = userId.Length > 10 
+                    ? $"User {userId.Substring(0, 8)}..." 
+                    : userId;
+                
                 channels.Add(new ChannelInfo
                 {
                     Id = $"bitplay-{userId}",
-                    Name = $"BitPlay - {userId}",
+                    Name = $"BitPlay - {displayName}",
                     Number = channelNumber.ToString(),
-                    CallSign = $"BP-{userId.ToUpper()}",
+                    CallSign = $"BP-{userId.Substring(0, Math.Min(6, userId.Length)).ToUpper()}",
                     ImageUrl = "https://bitplay.nhochart.ovh/favicon.ico",
                     HasImage = true
                 });

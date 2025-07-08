@@ -191,9 +191,10 @@ namespace Jellyfin.Plugin.JellyScout.Controllers
                         description = "Default BitPlay streaming channel for all users",
                         url = "/web/index.html#!/livetv.html?channelId=bitplay-main"
                     },
+                    // Example user channels
                     new
                     {
-                        number = "2156",
+                        number = "2722",
                         name = "BitPlay - user1",
                         user = "user1",
                         id = "bitplay-user1",
@@ -203,7 +204,7 @@ namespace Jellyfin.Plugin.JellyScout.Controllers
                     },
                     new
                     {
-                        number = "2387",
+                        number = "2216",
                         name = "BitPlay - user2",
                         user = "user2",
                         id = "bitplay-user2",
@@ -213,17 +214,7 @@ namespace Jellyfin.Plugin.JellyScout.Controllers
                     },
                     new
                     {
-                        number = "2642",
-                        name = "BitPlay - user3",
-                        user = "user3",
-                        id = "bitplay-user3",
-                        isMain = false,
-                        description = "Personalized channel for user3",
-                        url = "/web/index.html#!/livetv.html?channelId=bitplay-user3"
-                    },
-                    new
-                    {
-                        number = "2234",
+                        number = "2964",
                         name = "BitPlay - admin",
                         user = "admin",
                         id = "bitplay-admin",
@@ -233,13 +224,24 @@ namespace Jellyfin.Plugin.JellyScout.Controllers
                     },
                     new
                     {
-                        number = "2891",
+                        number = "2240",
                         name = "BitPlay - guest",
                         user = "guest",
                         id = "bitplay-guest",
                         isMain = false,
                         description = "Personalized channel for guest",
                         url = "/web/index.html#!/livetv.html?channelId=bitplay-guest"
+                    },
+                    // Real Jellyfin user ID
+                    new
+                    {
+                        number = "2998",
+                        name = "BitPlay - User 4632e692...",
+                        user = "4632e69256a643c0852dad5564682c6d",
+                        id = "bitplay-4632e69256a643c0852dad5564682c6d",
+                        isMain = false,
+                        description = "Personalized channel for user 4632e69256a643c0852dad5564682c6d",
+                        url = "/web/index.html#!/livetv.html?channelId=bitplay-4632e69256a643c0852dad5564682c6d"
                     }
                 };
 
@@ -255,31 +257,70 @@ namespace Jellyfin.Plugin.JellyScout.Controllers
         [HttpGet("livetv/channel/{channelNumber}")]
         public ActionResult RedirectToChannel(string channelNumber)
         {
+            _logger.LogInformation("Attempting to redirect to channel: {ChannelNumber}", channelNumber);
+            
             try
             {
                 // Map channel numbers to channel IDs
                 var channelMap = new Dictionary<string, string>
                 {
                     { "2001", "bitplay-main" },
-                    { "2156", "bitplay-user1" },
-                    { "2387", "bitplay-user2" },
-                    { "2642", "bitplay-user3" },
-                    { "2234", "bitplay-admin" },
-                    { "2891", "bitplay-guest" }
+                    { "2722", "bitplay-user1" },
+                    { "2216", "bitplay-user2" },
+                    { "2964", "bitplay-admin" },
+                    { "2240", "bitplay-guest" },
+                    { "2998", "bitplay-4632e69256a643c0852dad5564682c6d" }, // Your actual user ID
                 };
 
                 if (channelMap.TryGetValue(channelNumber, out var channelId))
                 {
-                    var redirectUrl = $"/web/index.html#!/livetv.html?channelId={channelId}";
+                    _logger.LogInformation("Found channel mapping: {ChannelNumber} -> {ChannelId}", channelNumber, channelId);
+                    
+                    // Try different redirect approaches
+                    var redirectUrls = new[]
+                    {
+                        $"/web/index.html#!/livetv.html?channelId={channelId}",
+                        $"/web/index.html#/livetv.html?channelId={channelId}",
+                        $"/web/index.html#!/livetv/channels/{channelId}",
+                        $"/web/index.html#/livetv/channels/{channelId}"
+                    };
+                    
+                    var redirectUrl = redirectUrls[0]; // Use the first one
+                    _logger.LogInformation("Redirecting to: {RedirectUrl}", redirectUrl);
+                    
                     return Redirect(redirectUrl);
                 }
 
-                return NotFound($"Channel {channelNumber} not found");
+                _logger.LogWarning("Channel {ChannelNumber} not found in mapping", channelNumber);
+                return NotFound(new { error = $"Channel {channelNumber} not found", availableChannels = channelMap.Keys });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error redirecting to channel {ChannelNumber}", channelNumber);
-                return StatusCode(500, "Internal server error");
+                return StatusCode(500, new { error = "Internal server error", message = ex.Message });
+            }
+        }
+
+        [HttpGet("test")]
+        public ActionResult<object> TestEndpoint()
+        {
+            try
+            {
+                _logger.LogInformation("Test endpoint called");
+                
+                return Ok(new 
+                { 
+                    status = "Plugin is working!",
+                    timestamp = DateTime.UtcNow,
+                    yourChannelNumber = "2998",
+                    yourUserId = "4632e69256a643c0852dad5564682c6d",
+                    message = "Your channel is Channel 2998 - look for it in Live TV channels"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in test endpoint");
+                return StatusCode(500, new { error = "Test failed", message = ex.Message });
             }
         }
 
