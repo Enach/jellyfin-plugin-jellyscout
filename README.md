@@ -1,121 +1,102 @@
-# JellyScout - Jellyfin Content Discovery Plugin
+# JellyScout Plugin for Jellyfin
 
-A comprehensive Jellyfin plugin that enhances your media discovery experience with powerful search capabilities, content recommendations, and seamless integration with your existing media management tools.
+A simple, clean Jellyfin plugin that provides movie and TV show search functionality using The Movie Database (TMDB) API. JellyScout integrates seamlessly with Jellyfin's native Live TV interface.
 
 ## Features
 
-- **Content Discovery**: Search and discover movies and TV shows
-- **External Integrations**: Seamlessly connects with Sonarr, Radarr, Prowlarr, and BitPlay
-- **Smart Filtering**: Advanced filtering options with quality preferences
-- **Automatic Downloads**: Request content directly from Jellyfin interface
-- **Health Monitoring**: Built-in health checks for all connected services
-- **Caching**: Intelligent caching for improved performance
-- **Modern UI**: Clean, responsive web interface
-
-## Prerequisites
-
-- Jellyfin server (version 10.8.0 or higher)
-- Optionally: Sonarr, Radarr, Prowlarr, or BitPlay if you want those features
+- **TMDB Search**: Search for movies and TV shows using TMDB's comprehensive database
+- **Live TV Integration**: Appears as channels in Jellyfin's Live TV interface
+- **REST API**: Direct API access for search functionality
+- **Simple Configuration**: Easy setup with just a TMDB API key
+- **Multi-language Support**: Search in multiple languages with regional preferences
 
 ## Installation
 
-1. Download the latest release from the [releases page](https://github.com/your-username/jellyfin-plugin-jellyscout/releases)
-2. Extract the plugin files to your Jellyfin plugins directory:
-   - Windows: `C:\ProgramData\Jellyfin\Server\plugins\JellyScout`
-   - Linux: `/var/lib/jellyfin/plugins/JellyScout`
-   - macOS: `/var/lib/jellyfin/plugins/JellyScout`
-3. Restart your Jellyfin server
-4. Navigate to **Dashboard > Plugins > JellyScout** to configure
+1. Download the latest release from the [releases page](https://github.com/jellyfin/jellyfin-plugin-jellyscout/releases)
+2. Extract the plugin files to your Jellyfin plugins directory
+3. Restart Jellyfin
+4. Configure the plugin in the admin dashboard
 
 ## Configuration
 
-### Basic Setup
-1. Go to **Dashboard > Plugins > JellyScout**
-2. Configure your external service integrations (optional)
-3. Set your preferred quality and filtering options
-4. Save the configuration
-
-### External Service Integration
-
-**Sonarr (for TV shows):**
-- Server URL: `http://your-sonarr-server:8989`
-- API Key: Your Sonarr API key
-
-**Radarr (for movies):**
-- Server URL: `http://your-radarr-server:7878`
-- API Key: Your Radarr API key
-
-**Prowlarr (for indexer management):**
-- Server URL: `http://your-prowlarr-server:9696`
-- API Key: Your Prowlarr API key
-
-**BitPlay (for direct streaming):**
-- Server URL: `http://your-bitplay-server:port`
-
-### Quality Settings
-- **Minimum Seeders**: Set minimum number of seeders for torrent results
-- **Preferred Quality**: Choose default quality preference (720p, 1080p, 4K)
-- **Max Results**: Maximum number of results to display per search
+1. Go to **Admin Dashboard** → **Plugins** → **JellyScout**
+2. Enter your TMDB API key (get one free from [TMDB](https://www.themoviedb.org/settings/api))
+3. Configure your preferences:
+   - **Max Search Results**: Number of results to return (10-100)
+   - **Language**: Language for search results and metadata
+   - **Region**: Region for content filtering and release dates
+   - **Include Adult Content**: Whether to include adult content in results
+4. Click **Save**
 
 ## Usage
 
-### Content Discovery
-1. Navigate to the **JellyScout** page in your Jellyfin interface
-2. Use the search bar to find movies or TV shows
-3. Apply filters to refine your results
-4. Click on any result to view details and available actions
+### Live TV Interface
 
-### Requesting Content
-1. Find the content you want
-2. Click **Request** to add it to your download queue
-3. If configured, the request will be sent to Sonarr/Radarr
-4. Monitor progress through the plugin interface
+After installation and configuration, JellyScout appears as two channels in Jellyfin's Live TV:
 
-### Playlists
-- Create custom playlists from search results
-- Export playlists to external services
-- Manage your content collections
+- **Channel 1001**: Movie Search
+- **Channel 1002**: TV Show Search
 
-## Troubleshooting
+Navigate to **Live TV** in Jellyfin and select the JellyScout channels to access search functionality.
 
-### Common Issues
+### REST API
 
-**Plugin not appearing in Jellyfin:**
-- Ensure the plugin is in the correct directory
-- Check Jellyfin logs for loading errors
-- Verify file permissions
+You can also access search functionality directly through the REST API:
 
-**External services not connecting:**
-- Verify server URLs are correct and accessible
-- Check API keys are valid
-- Ensure services are running and accessible from Jellyfin server
+```bash
+# Search for movies and TV shows
+GET /api/jellyscout/search?query=batman
 
-**No search results:**
-- Verify Prowlarr integration is working
-- Check if indexers are configured in Prowlarr
-- Review plugin logs for error messages
+# Search for movies only
+GET /api/jellyscout/search?query=batman&mediaType=movie
 
-### Health Checks
-The plugin includes built-in health monitoring:
-- Navigate to **Dashboard > Plugins > JellyScout > Health**
-- View status of all connected services
-- Check detailed error messages and suggestions
+# Search for TV shows only
+GET /api/jellyscout/search?query=batman&mediaType=tv
+
+# Get plugin status
+GET /api/jellyscout/status
+```
+
+## Architecture
+
+JellyScout follows a simple, clean architecture:
+
+```
+JellyScout/
+├── Configuration/
+│   ├── PluginConfiguration.cs    # Plugin settings
+│   └── configPage.html           # Configuration web page
+├── Controllers/
+│   └── JellyScoutController.cs   # REST API endpoints
+├── Models/
+│   └── TmdbModels.cs             # TMDB data models
+├── Services/
+│   ├── TMDBService.cs            # TMDB API service
+│   ├── TmdbLiveTvService.cs      # Live TV integration
+│   └── JellyScoutServiceRegistrator.cs # DI registration
+└── Plugin.cs                     # Main plugin class
+```
+
+### Key Components
+
+- **TMDBService**: Handles all TMDB API interactions
+- **TmdbLiveTvService**: Implements `ILiveTvService` for Live TV integration
+- **JellyScoutController**: Provides REST API endpoints
+- **PluginConfiguration**: Simple configuration with essential settings
 
 ## Development
 
 ### Building from Source
-```bash
-git clone https://github.com/your-username/jellyfin-plugin-jellyscout.git
-cd jellyfin-plugin-jellyscout
-dotnet build
-```
 
-### Testing
-```bash
-dotnet test
-```
+1. Clone the repository
+2. Ensure you have .NET 6.0 or later installed
+3. Build the project:
+   ```bash
+   dotnet build
+   ```
+4. The plugin DLL will be in `bin/Debug/net6.0/`
 
-## Contributing
+### Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -123,33 +104,32 @@ dotnet test
 4. Add tests if applicable
 5. Submit a pull request
 
-## License
+## Requirements
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-- **GitHub Issues**: [Report bugs or request features](https://github.com/your-username/jellyfin-plugin-jellyscout/issues)
-- **Documentation**: [Wiki](https://github.com/your-username/jellyfin-plugin-jellyscout/wiki)
+- Jellyfin 10.8.0 or later
+- TMDB API key (free registration required)
+- Internet connection for TMDB API access
 
 ## Changelog
 
-### v0.1.7 (Latest)
-- Fixed configuration page settings not saving
-- Changed Prowlarr API Key to text field for better UX
-- Simplified configuration system using Jellyfin's built-in form handling
-- Removed unnecessary complexity and custom JavaScript
-- Updated all service integrations for better reliability
+### Version 1.0.0
+- Complete rewrite with clean, simple architecture
+- Live TV integration following Jellyfin.Xtream pattern
+- Removed over-engineered components
+- Simple TMDB search functionality
+- REST API endpoints
+- Clean configuration interface
 
-### v0.1.5
-- Added comprehensive API integration with Sonarr, Radarr, and Prowlarr
-- Implemented advanced filtering, playlist support, and configuration validation
-- Enhanced error handling and logging
-- Added health check system for monitoring service status
-- Improved caching and performance optimization
+## License
 
-### v0.1.0
-- Initial release
-- Basic content discovery functionality
-- Integration with external services
-- Web-based configuration interface 
+This plugin is licensed under the GPL-3.0 License. See the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For issues, questions, or feature requests, please use the [GitHub Issues](https://github.com/jellyfin/jellyfin-plugin-jellyscout/issues) page.
+
+## Credits
+
+- [The Movie Database (TMDB)](https://www.themoviedb.org/) for the movie and TV show data
+- [Jellyfin](https://jellyfin.org/) for the media server platform
+- [Jellyfin.Xtream](https://github.com/Kevinjil/Jellyfin.Xtream) for Live TV integration patterns 
