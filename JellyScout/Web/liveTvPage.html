@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BitPlay Live TV - Channel Access</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #101010;
+            color: #ffffff;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px 0;
+            border-bottom: 2px solid #333;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: #00a4dc;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            color: #ccc;
+        }
+        
+        .channels-section {
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .channels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .channel-card {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            border: 2px solid #333;
+        }
+        
+        .channel-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 164, 220, 0.3);
+            border-color: #00a4dc;
+        }
+        
+        .channel-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00a4dc;
+            margin-bottom: 10px;
+        }
+        
+        .channel-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+        
+        .channel-user {
+            color: #ccc;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        
+        .channel-button {
+            background: #00a4dc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 100%;
+        }
+        
+        .channel-button:hover {
+            background: #0088b8;
+        }
+        
+        .main-channel {
+            border-color: #ff9800;
+        }
+        
+        .main-channel .channel-number {
+            color: #ff9800;
+        }
+        
+        .instructions {
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .instructions h3 {
+            color: #00a4dc;
+            margin-bottom: 10px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4caf50;
+            margin-right: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .channels-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📺 BitPlay Live TV</h1>
+            <p>Access your personalized streaming channels</p>
+        </div>
+        
+        <div class="instructions">
+            <h3>How to Access Your Channel:</h3>
+            <p>Each user has been assigned a unique channel number based on their user ID. Click on your channel below to start watching BitPlay content.</p>
+        </div>
+        
+        <div class="channels-section">
+            <h2><span class="status-indicator"></span>Available Channels</h2>
+            <div class="channels-grid" id="channelsGrid">
+                <!-- Channels will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        (function() {
+            'use strict';
+            
+            // Channel data will be loaded from API
+            let channels = [];
+            
+            function createChannelCard(channel) {
+                const card = document.createElement('div');
+                card.className = `channel-card ${channel.isMain ? 'main-channel' : ''}`;
+                
+                card.innerHTML = `
+                    <div class="channel-number">${channel.number}</div>
+                    <div class="channel-name">${channel.name}</div>
+                    <div class="channel-user">${channel.user}</div>
+                    <button class="channel-button" onclick="openChannel('${channel.number}', '${channel.id}')">
+                        Watch Channel ${channel.number}
+                    </button>
+                `;
+                
+                return card;
+            }
+            
+            function populateChannels() {
+                const grid = document.getElementById('channelsGrid');
+                grid.innerHTML = ''; // Clear existing content
+                
+                channels.forEach(channel => {
+                    const card = createChannelCard(channel);
+                    grid.appendChild(card);
+                });
+            }
+            
+            async function loadChannels() {
+                try {
+                    const response = await fetch('/api/jellyscout/livetv/channels');
+                    if (response.ok) {
+                        const data = await response.json();
+                        channels = data.channels;
+                        populateChannels();
+                    } else {
+                        console.error('Failed to load channels:', response.status);
+                        // Fallback to static channels if API fails
+                        loadFallbackChannels();
+                    }
+                } catch (error) {
+                    console.error('Error loading channels:', error);
+                    // Fallback to static channels if API fails
+                    loadFallbackChannels();
+                }
+            }
+            
+            function loadFallbackChannels() {
+                // Fallback channel data
+                channels = [
+                    {
+                        number: "2001",
+                        name: "BitPlay Streaming",
+                        user: "Main Channel",
+                        id: "bitplay-main",
+                        isMain: true,
+                        description: "Default BitPlay streaming channel for all users"
+                    },
+                    {
+                        number: "2156",
+                        name: "BitPlay - user1",
+                        user: "user1",
+                        id: "bitplay-user1",
+                        isMain: false,
+                        description: "Personalized channel for user1"
+                    },
+                    {
+                        number: "2387",
+                        name: "BitPlay - user2",
+                        user: "user2", 
+                        id: "bitplay-user2",
+                        isMain: false,
+                        description: "Personalized channel for user2"
+                    },
+                    {
+                        number: "2642",
+                        name: "BitPlay - user3",
+                        user: "user3",
+                        id: "bitplay-user3",
+                        isMain: false,
+                        description: "Personalized channel for user3"
+                    },
+                    {
+                        number: "2234",
+                        name: "BitPlay - admin",
+                        user: "admin",
+                        id: "bitplay-admin",
+                        isMain: false,
+                        description: "Personalized channel for admin"
+                    },
+                    {
+                        number: "2891",
+                        name: "BitPlay - guest",
+                        user: "guest",
+                        id: "bitplay-guest",
+                        isMain: false,
+                        description: "Personalized channel for guest"
+                    }
+                ];
+                populateChannels();
+            }
+            
+            // Make openChannel function globally available
+            window.openChannel = function(channelNumber, channelId) {
+                // Try to open in Live TV interface
+                const liveTvUrl = `/web/index.html#!/livetv.html?channelId=${channelId}`;
+                
+                // Try multiple approaches to open the channel
+                try {
+                    // First try: Direct Live TV navigation
+                    if (window.parent && window.parent.Dashboard) {
+                        window.parent.Dashboard.navigate(liveTvUrl);
+                        return;
+                    }
+                    
+                    // Second try: Use Jellyfin's navigation if available
+                    if (window.parent && window.parent.Emby && window.parent.Emby.Page) {
+                        window.parent.Emby.Page.show(liveTvUrl);
+                        return;
+                    }
+                    
+                    // Third try: Direct window location
+                    if (window.parent) {
+                        window.parent.location.href = liveTvUrl;
+                        return;
+                    }
+                    
+                    // Fallback: Open in current window
+                    window.location.href = liveTvUrl;
+                    
+                } catch (error) {
+                    console.error('Error opening channel:', error);
+                    
+                    // Ultimate fallback: Show instructions
+                    alert(`To watch Channel ${channelNumber}:\\n\\n1. Go to Live TV in Jellyfin\\n2. Look for channel ${channelNumber}\\n3. Click to start watching\\n\\nChannel ID: ${channelId}`);
+                }
+            };
+            
+            // Initialize the page
+            document.addEventListener('DOMContentLoaded', function() {
+                loadChannels();
+            });
+            
+            // Also run immediately in case DOMContentLoaded already fired
+            if (document.readyState === 'loading') {
+                // Document is still loading, wait for DOMContentLoaded
+            } else {
+                // Document is already loaded
+                loadChannels();
+            }
+        })();
+    </script>
+</body>
+</html> 

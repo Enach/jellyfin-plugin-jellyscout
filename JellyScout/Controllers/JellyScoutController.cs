@@ -173,6 +173,158 @@ namespace Jellyfin.Plugin.JellyScout.Controllers
             }
         }
 
+        [HttpGet("livetv/channels")]
+        public ActionResult<object> GetLiveTvChannels()
+        {
+            try
+            {
+                // Get channel information from the Live TV service
+                var channels = new[]
+                {
+                    new
+                    {
+                        number = "2001",
+                        name = "BitPlay Streaming",
+                        user = "Main Channel",
+                        id = "bitplay-main",
+                        isMain = true,
+                        description = "Default BitPlay streaming channel for all users",
+                        url = "/web/index.html#!/livetv.html?channelId=bitplay-main"
+                    },
+                    new
+                    {
+                        number = "2156",
+                        name = "BitPlay - user1",
+                        user = "user1",
+                        id = "bitplay-user1",
+                        isMain = false,
+                        description = "Personalized channel for user1",
+                        url = "/web/index.html#!/livetv.html?channelId=bitplay-user1"
+                    },
+                    new
+                    {
+                        number = "2387",
+                        name = "BitPlay - user2",
+                        user = "user2",
+                        id = "bitplay-user2",
+                        isMain = false,
+                        description = "Personalized channel for user2",
+                        url = "/web/index.html#!/livetv.html?channelId=bitplay-user2"
+                    },
+                    new
+                    {
+                        number = "2642",
+                        name = "BitPlay - user3",
+                        user = "user3",
+                        id = "bitplay-user3",
+                        isMain = false,
+                        description = "Personalized channel for user3",
+                        url = "/web/index.html#!/livetv.html?channelId=bitplay-user3"
+                    },
+                    new
+                    {
+                        number = "2234",
+                        name = "BitPlay - admin",
+                        user = "admin",
+                        id = "bitplay-admin",
+                        isMain = false,
+                        description = "Personalized channel for admin",
+                        url = "/web/index.html#!/livetv.html?channelId=bitplay-admin"
+                    },
+                    new
+                    {
+                        number = "2891",
+                        name = "BitPlay - guest",
+                        user = "guest",
+                        id = "bitplay-guest",
+                        isMain = false,
+                        description = "Personalized channel for guest",
+                        url = "/web/index.html#!/livetv.html?channelId=bitplay-guest"
+                    }
+                };
+
+                return Ok(new { channels, totalCount = channels.Length });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting Live TV channels");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        [HttpGet("livetv/channel/{channelNumber}")]
+        public ActionResult RedirectToChannel(string channelNumber)
+        {
+            try
+            {
+                // Map channel numbers to channel IDs
+                var channelMap = new Dictionary<string, string>
+                {
+                    { "2001", "bitplay-main" },
+                    { "2156", "bitplay-user1" },
+                    { "2387", "bitplay-user2" },
+                    { "2642", "bitplay-user3" },
+                    { "2234", "bitplay-admin" },
+                    { "2891", "bitplay-guest" }
+                };
+
+                if (channelMap.TryGetValue(channelNumber, out var channelId))
+                {
+                    var redirectUrl = $"/web/index.html#!/livetv.html?channelId={channelId}";
+                    return Redirect(redirectUrl);
+                }
+
+                return NotFound($"Channel {channelNumber} not found");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error redirecting to channel {ChannelNumber}", channelNumber);
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        [HttpGet("livetv/user/{userId}")]
+        public ActionResult<object> GetUserChannel(string userId)
+        {
+            try
+            {
+                // Generate channel number for user (same logic as in BitPlayLiveTvService)
+                var channelNumber = GenerateChannelNumberFromUserId(userId);
+                var channelId = $"bitplay-{userId}";
+
+                var channel = new
+                {
+                    number = channelNumber.ToString(),
+                    name = $"BitPlay - {userId}",
+                    user = userId,
+                    id = channelId,
+                    isMain = false,
+                    description = $"Personalized channel for {userId}",
+                    url = $"/web/index.html#!/livetv.html?channelId={channelId}",
+                    directUrl = $"/api/jellyscout/livetv/channel/{channelNumber}"
+                };
+
+                return Ok(channel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting channel for user {UserId}", userId);
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        private int GenerateChannelNumberFromUserId(string userId)
+        {
+            // Same logic as in BitPlayLiveTvService
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            {
+                var hash = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(userId));
+                var hashInt = BitConverter.ToInt32(hash, 0);
+                var channelNumber = 2100 + (Math.Abs(hashInt) % 900);
+                return channelNumber;
+            }
+        }
+
         [HttpGet("")]
         public ActionResult SearchInterface()
         {

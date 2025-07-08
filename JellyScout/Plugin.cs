@@ -34,6 +34,11 @@ namespace Jellyfin.Plugin.JellyScout
                 {
                     Name = "JellyScout Configuration",
                     EmbeddedResourcePath = "Jellyfin.Plugin.JellyScout.JellyScout.Configuration.configPage.html"
+                },
+                new PluginPageInfo
+                {
+                    Name = "BitPlay Live TV",
+                    EmbeddedResourcePath = "Jellyfin.Plugin.JellyScout.JellyScout.Web.liveTvPage.html"
                 }
             };
         }
