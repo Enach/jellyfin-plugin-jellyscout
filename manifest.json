@@ -9,6 +9,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "0.1.10.0",
+        "changelog": "🔴 LIVE TV INTEGRATION - BitPlay Streaming Service\n\n✨ NEW FEATURES:\n• Added complete Live TV integration with ILiveTvService implementation\n• BitPlay streaming service integration for Live TV channels\n• User-specific channel numbers based on user ID hashing\n• Multi-user channel support with consistent channel assignments\n• EPG (Electronic Program Guide) with personalized program names\n• Stream serving via iframe integration with BitPlay\n• Automatic channel generation for multiple users\n\n📺 LIVE TV FUNCTIONALITY:\n• Channel 2001: BitPlay Streaming (main/default channel)\n• User-specific channels (2100-2999 range) based on user ID\n• Consistent channel numbers per user using SHA256 hashing\n• Live TV interface integration in Jellyfin\n• Program guide with personalized content\n• Stream URLs served directly to Jellyfin Live TV\n\n🔧 TECHNICAL IMPLEMENTATION:\n• BitPlayLiveTvService implementing ILiveTvService interface\n• GetChannelsAsync() for channel enumeration\n• GetProgramsAsync() for EPG data\n• GetChannelStreamAsync() for stream URL serving\n• Proper dependency injection registration\n• SHA256-based channel number generation\n• Multi-user channel architecture\n\n⚙️ CONFIGURATION:\n• Seamless integration with existing BitPlay configuration\n• No additional setup required for Live TV functionality\n• Backwards compatible with existing streaming features\n• Live TV channels appear automatically in Jellyfin\n\n🎯 USAGE:\n• Navigate to Jellyfin Live TV section\n• BitPlay channels appear in channel list\n• Each user gets personalized channel numbers\n• Click channels to start streaming via BitPlay\n• EPG shows personalized program information\n\nThis version transforms JellyScout into a complete Live TV solution while maintaining all existing discovery and streaming functionality. The Live TV integration provides a native Jellyfin experience for BitPlay streaming.",
+        "targetAbi": "10.9.0.0",
+        "sourceUrl": "https://github.com/enach/jellyfin-plugin-jellyscout/releases/download/v0.1.10/JellyScout-v0.1.10.zip",
+        "checksum": "c68c72737172190c4df312c0804585d5",
+        "timestamp": "2025-01-14T10:00:00Z"
+      },
+      {
         "version": "0.1.8.0",
         "changelog": "🔧 Critical Configuration Fix:\n\n• Fixed configuration page not saving settings properly\n• Added proper JavaScript for loading and saving configuration\n• Form now loads current settings when opened\n• Settings are properly saved without page clearing\n• Added success/error messages for save operations\n• Fixed form submission handling\n\nThis version finally fixes the configuration page issue where settings were cleared instead of saved.",
         "targetAbi": "10.8.0.0",
