@@ -147,16 +147,16 @@
         </div>
         
         <div class="instructions">
-            <h3>How to Access Your Channel:</h3>
-            <p><strong>Your Channel Number: 2998</strong></p>
-            <p>Channel 2998 should now appear in your Live TV channel list alongside your Xtream channels.</p>
-            <p>If you don't see Channel 2998:</p>
+            <h3>BitPlay Direct Streaming Access:</h3>
+            <p><strong>Since Xtream plugin controls Live TV, use direct streaming instead:</strong></p>
+            <p><strong>Your Personal BitPlay Stream:</strong></p>
             <ul>
-                <li>Restart Jellyfin server to register the BitPlay Live TV service</li>
-                <li>Go to Live TV and refresh the channel list</li>
-                <li>Look for "BitPlay - User 4632e692..." in your channels</li>
-                <li>Check Jellyfin logs for any Live TV service conflicts</li>
+                <li><strong>Direct Link:</strong> <a href="https://bitplay.nhochart.ovh" target="_blank">https://bitplay.nhochart.ovh</a></li>
+                <li><strong>Your User ID:</strong> 4632e69256a643c0852dad5564682c6d</li>
+                <li><strong>Channel Number:</strong> 2998 (for reference)</li>
+                <li><strong>Stream in new tab:</strong> Click the link above to open BitPlay directly</li>
             </ul>
+            <p><strong>Note:</strong> Xtream plugin is overriding Jellyfin's Live TV system, so BitPlay channels can't appear in the channel list. Use the direct link instead.</p>
         </div>
         
         <div class="channels-section">
@@ -276,37 +276,17 @@
             
             // Make openChannel function globally available
             window.openChannel = function(channelNumber, channelId) {
-                // Try to open in Live TV interface
-                const liveTvUrl = `/web/index.html#!/livetv.html?channelId=${channelId}`;
+                // Since Xtream plugin overrides Live TV, open BitPlay directly instead
+                const bitplayUrl = 'https://bitplay.nhochart.ovh';
                 
-                // Try multiple approaches to open the channel
                 try {
-                    // First try: Direct Live TV navigation
-                    if (window.parent && window.parent.Dashboard) {
-                        window.parent.Dashboard.navigate(liveTvUrl);
-                        return;
-                    }
-                    
-                    // Second try: Use Jellyfin's navigation if available
-                    if (window.parent && window.parent.Emby && window.parent.Emby.Page) {
-                        window.parent.Emby.Page.show(liveTvUrl);
-                        return;
-                    }
-                    
-                    // Third try: Direct window location
-                    if (window.parent) {
-                        window.parent.location.href = liveTvUrl;
-                        return;
-                    }
-                    
-                    // Fallback: Open in current window
-                    window.location.href = liveTvUrl;
-                    
+                    // Open BitPlay in a new tab/window
+                    window.open(bitplayUrl, '_blank');
                 } catch (error) {
-                    console.error('Error opening channel:', error);
+                    console.error('Error opening BitPlay:', error);
                     
-                    // Ultimate fallback: Show instructions
-                    alert(`To watch Channel ${channelNumber}:\\n\\n1. Go to Live TV in Jellyfin\\n2. Look for channel ${channelNumber}\\n3. Click to start watching\\n\\nChannel ID: ${channelId}`);
+                    // Fallback: Show direct link
+                    alert(`BitPlay Direct Streaming:\\n\\nURL: ${bitplayUrl}\\n\\nSince Xtream plugin controls Live TV, use this direct link to access BitPlay streaming.`);
                 }
             };
             

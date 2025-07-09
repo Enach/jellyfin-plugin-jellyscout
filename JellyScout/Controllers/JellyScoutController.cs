@@ -301,6 +301,95 @@ namespace Jellyfin.Plugin.JellyScout.Controllers
             }
         }
 
+        [HttpGet("stream")]
+        public ActionResult BitPlayStream()
+        {
+            try
+            {
+                _logger.LogInformation("BitPlay stream endpoint accessed");
+                
+                // Since Xtream plugin overrides Live TV, provide direct streaming page
+                var html = GetBitPlayStreamHtml();
+                return Content(html, "text/html");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error serving BitPlay stream page");
+                return StatusCode(500, new { error = "Error loading stream page", message = ex.Message });
+            }
+        }
+
+        private string GetBitPlayStreamHtml()
+        {
+            return @"
+<!DOCTYPE html>
+<html lang=""en"">
+<head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>BitPlay Streaming - Channel 2998</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 20px; 
+            background: #101010; 
+            color: #fff; 
+            font-family: Arial, sans-serif; 
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            text-align: center; 
+        }
+        .header { 
+            margin-bottom: 30px; 
+        }
+        .stream-frame { 
+            width: 100%; 
+            height: 600px; 
+            border: none; 
+            border-radius: 8px; 
+            background: #000; 
+        }
+        .info { 
+            margin-top: 20px; 
+            padding: 20px; 
+            background: #1a1a1a; 
+            border-radius: 8px; 
+        }
+        .direct-link { 
+            color: #00a4dc; 
+            text-decoration: none; 
+            font-weight: bold; 
+        }
+        .direct-link:hover { 
+            text-decoration: underline; 
+        }
+    </style>
+</head>
+<body>
+    <div class=""container"">
+        <div class=""header"">
+            <h1>📺 BitPlay Streaming</h1>
+            <p>Channel 2998 - User: 4632e69256a643c0852dad5564682c6d</p>
+        </div>
+        
+        <iframe 
+            src=""https://bitplay.nhochart.ovh"" 
+            class=""stream-frame""
+            allowfullscreen>
+        </iframe>
+        
+        <div class=""info"">
+            <h3>Direct Access</h3>
+            <p>Stream URL: <a href=""https://bitplay.nhochart.ovh"" target=""_blank"" class=""direct-link"">https://bitplay.nhochart.ovh</a></p>
+            <p><strong>Note:</strong> Since Xtream plugin controls Jellyfin's Live TV system, BitPlay is provided as a direct streaming service.</p>
+        </div>
+    </div>
+</body>
+</html>";
+        }
+
         [HttpGet("test")]
         public ActionResult<object> TestEndpoint()
         {

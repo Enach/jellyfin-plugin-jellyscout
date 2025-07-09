@@ -52,6 +52,9 @@ namespace Jellyfin.Plugin.JellyScout
             // Register TMDBService as a singleton
             serviceCollection.AddSingleton<TMDBService>();
             
+            // Disable BitPlay Live TV service since Xtream plugin is overriding Live TV system
+            // Instead, we'll provide direct streaming links through the web interface
+            /*
             // Re-enable BitPlay Live TV service to provide Channel 2998 alongside Xtream plugin
             // This should coexist with other Live TV services like Xtream
             try
@@ -63,6 +66,7 @@ namespace Jellyfin.Plugin.JellyScout
                 // Log the error but don't fail plugin loading if Live TV service can't be registered
                 System.Diagnostics.Debug.WriteLine($"Warning: Could not register BitPlay Live TV service: {ex.Message}");
             }
+            */
         }
     }
 } 
